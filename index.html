@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Governor's Regional Intelligence Dashboard (GRID) - Lower River Region</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --diamond: #B9F2FF;
+            --light-green: #90EE90;
+            --dark-gray: #2F4F4F;
+            --white: #FFFFFF;
+            --black: #000000;
+            --alert-red: #FF6B6B;
+            --warning-orange: #FFA500;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+        
+        /* SIDEBAR */
+        .sidebar {
+            background-color: var(--dark-gray);
+            color: var(--white);
+            padding: 20px 0;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 2px solid var(--gold);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-header h1 {
+            font-size: 1.2rem;
+            color: var(--gold);
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-header .title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--white);
+        }
+        
+        .sidebar-nav {
+            list-style: none;
+        }
+        
+        .sidebar-nav li {
+            padding: 15px 20px;
+            border-left: 4px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sidebar-nav li:hover {
+            background-color: rgba(255, 215, 0, 0.1);
+            border-left: 4px solid var(--gold);
+        }
+        
+        .sidebar-nav li.active {
+            background-color: rgba(255, 215, 0, 0.2);
+            border-left: 4px solid var(--gold);
+            color: var(--gold);
+        }
+        
+        /* MAIN CONTENT */
+        .main-content {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            overflow: hidden;
+        }
+        
+        .top-bar {
+            background-color: var(--white);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 3px solid var(--gold);
+        }
+        
+        .governor-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .governor-avatar {
+            width: 50px;
+            height: 50px;
+            background-color: var(--diamond);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: var(--dark-gray);
+            border: 2px solid var(--gold);
+        }
+        
+        .alert-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background-color: var(--alert-red);
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .content-area {
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+        
+        .dashboard-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .dashboard-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* EXECUTIVE SUMMARY */
+        .executive-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--gold);
+        }
+        
+        .summary-card.security {
+            border-top-color: var(--alert-red);
+        }
+        
+        .summary-card.projects {
+            border-top-color: var(--diamond);
+        }
+        
+        .summary-card.finance {
+            border-top-color: var(--light-green);
+        }
+        
+        .summary-card.health {
+            border-top-color: var(--silver);
+        }
+        
+        .summary-card h3 {
+            margin-bottom: 15px;
+            color: var(--dark-gray);
+            font-size: 1.1rem;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .metric-value.security { color: var(--alert-red); }
+        .metric-value.projects { color: var(--diamond); }
+        .metric-value.finance { color: var(--light-green); }
+        .metric-value.health { color: var(--silver); }
+        
+        .metric-trend {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .trend-up { color: #28a745; }
+        .trend-down { color: var(--alert-red); }
+        
+        /* MAP CONTAINER */
+        .map-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: 500px;
+        }
+        
+        #region-map {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+        
+        /* DATA TABLES */
+        .data-table-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--dark-gray);
+        }
+        
+        .section-header h2 {
+            color: var(--dark-gray);
+        }
+        
+        .btn {
+            padding: 8px 15px;
+            background-color: var(--gold);
+            color: var(--dark-gray);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: #e6c300;
+            transform: translateY(-2px);
+        }
+        
+        .btn-download {
+            background-color: var(--diamond);
+            color: var(--dark-gray);
+        }
+        
+        .btn-alert {
+            background-color: var(--alert-red);
+            color: white;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background-color: var(--dark-gray);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background-color: rgba(255, 215, 0, 0.1);
+        }
+        
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-active { background-color: rgba(144, 238, 144, 0.3); color: #28a745; }
+        .status-pending { background-color: rgba(255, 165, 0, 0.3); color: #ff8c00; }
+        .status-critical { background-color: rgba(255, 107, 107, 0.3); color: #dc3545; }
+        .status-completed { background-color: rgba(185, 242, 255, 0.3); color: #17a2b8; }
+        
+        /* CHARTS */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* ALERTS */
+        .alert-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .alert-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 5px solid var(--alert-red);
+            background-color: rgba(255, 107, 107, 0.1);
+        }
+        
+        .alert-item.warning {
+            border-left-color: var(--warning-orange);
+            background-color: rgba(255, 165, 0, 0.1);
+        }
+        
+        .alert-item.info {
+            border-left-color: var(--diamond);
+            background-color: rgba(185, 242, 255, 0.1);
+        }
+        
+        /* TRADITIONAL LEADERS SECTION */
+        .leaders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .leader-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--gold);
+        }
+        
+        .leader-title {
+            color: var(--dark-gray);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .leader-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--dark-gray);
+            margin-bottom: 10px;
+        }
+        
+        .leader-contact {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .executive-summary {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .leaders-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* PRINT STYLES */
+        @media print {
+            .sidebar, .top-bar, .btn {
+                display: none;
+            }
+            
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-section {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- SIDEBAR NAVIGATION -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>REPUBLIC OF THE GAMBIA</h1>
+                <div class="title">GOVERNOR'S GRID</div>
+                <div style="margin-top: 5px; font-size: 0.9rem; color: var(--silver);">Lower River Region</div>
+            </div>
+            <ul class="sidebar-nav">
+                <li class="active" data-section="dashboard"><span>📊</span> Executive Dashboard</li>
+                <li data-section="security"><span>🚨</span> Security Command</li>
+                <li data-section="development"><span>🏗️</span> Development Tracker</li>
+                <li data-section="councils"><span>🏛️</span> Council Performance</li>
+                <li data-section="health"><span>🏥</span> Health Sector</li>
+                <li data-section="agriculture"><span>🌾</span> Agriculture</li>
+                <li data-section="education"><span>📚</span> Education</li>
+                <li data-section="infrastructure"><span>🛣️</span> Infrastructure</li>
+                <li data-section="leaders"><span>👑</span> Traditional Leaders</li>
+                <li data-section="personnel"><span>👥</span> Personnel Directory</li>
+                <li data-section="reports"><span>📋</span> Reports & Analytics</li>
+                <li data-section="alerts"><span>⚠️</span> Alert Center</li>
+            </ul>
+        </div>
+        
+        <!-- MAIN CONTENT AREA -->
+        <div class="main-content">
+            <!-- TOP BAR -->
+            <div class="top-bar">
+                <div class="governor-info">
+                    <div class="governor-avatar">AG</div>
+                    <div>
+                        <div style="font-weight: 700; color: var(--dark-gray);">HON. ALHAGIE S. JAWARA</div>
+                        <div style="font-size: 0.9rem; color: #666;">Regional Governor, Lower River Region</div>
+                    </div>
+                </div>
+                <div class="alert-indicator">
+                    <span>🚨</span>
+                    <span id="alert-count">3 CRITICAL ALERTS</span>
+                </div>
+            </div>
+            
+            <!-- DASHBOARD SECTIONS -->
+            <div class="content-area">
+                <!-- EXECUTIVE DASHBOARD -->
+                <section id="dashboard" class="dashboard-section active">
+                    <h1 style="color: var(--dark-gray); margin-bottom: 20px;">Executive Dashboard</h1>
+                    
+                    <!-- VITAL SIGNS -->
+                    <div class="executive-summary">
+                        <div class="summary-card security">
+                            <h3>Security Status</h3>
+                            <div class="metric-value security">78/100</div>
+                            <div class="metric-trend"><span class="trend-up">↑</span> Improved by 5% from last month</div>
+                            <div style="margin-top: 10px; font-size: 0.9rem;">7 incidents this week</div>
+                        </div>
+                        
+                        <div class="summary-card projects">
+                            <h3>Project Completion</h3>
+                            <div class="metric-value projects">72%</div>
+                            <div class="metric-trend"><span class="trend-up">↑</span> 8 projects on schedule</div>
+                            <div style="margin-top: 10px; font-size: 0.9rem;">4 projects behind schedule</div>
+                        </div>
+                        
+                        <div class="summary-card finance">
+                            <h3>Revenue Collection</h3>
+                            <div class="metric-value finance">84%</div>
+                            <div class="metric-trend"><span class="trend-up">↑</span> Exceeds target by 4%</div>
+                            <div style="margin-top: 10px; font-size: 0.9rem;">GMD 4.97M collected</div>
+                        </div>
+                        
+                        <div class="summary-card health">
+                            <h3>Health Readiness</h3>
+                            <div class="metric-value health">82%</div>
+                            <div class="metric-trend"><span class="trend-down">↓</span> Malaria cases increased 12%</div>
+                            <div style="margin-top: 10px; font-size: 0.9rem;">142 malaria cases this week</div>
+                        </div>
+                    </div>
+                    
+                    <!-- REGIONAL MAP -->
+                    <div class="map-container">
+                        <div class="section-header">
+                            <h2>Regional Map - Lower River Region</h2>
+                            <button class="btn" onclick="downloadMapData()">
+                                <span>📥</span> Download Map Data
+                            </button>
+                        </div>
+                        <div id="region-map"></div>
+                    </div>
+                    
+                    <!-- QUICK ACTIONS -->
+                    <div class="data-table-container">
+                        <div class="section-header">
+                            <h2>Quick Actions</h2>
+                        </div>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <button class="btn" onclick="generateWeeklyReport()">
+                                <span>📄</span> Generate Weekly Report
+                            </button>
+                            <button class="btn" onclick="conveneRECSEC()">
+                                <span>👥</span> Convene RECSEC Meeting
+                            </button>
+                            <button class="btn" onclick="sendRegionalAlert()">
+                                <span>📢</span> Send Regional Alert
+                            </button>
+                            <button class="btn btn-download" onclick="downloadAllData()">
+                                <span>💾</span> Download All Data
+                            </button>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- SECURITY COMMAND -->
+                <section id="security" class="dashboard-section">
+                    <h1 style="color: var(--dark-gray); margin-bottom: 20px;">Security Command Center</h1>
+                    
+                    <div class="data-table-container">
+                        <div class="section-header">
+                            <h2>Recent Security Incidents</h2>
+                            <button class="btn btn-download" onclick="downloadCSV('security')">
+                                <span>📥</span> Download CSV
+                            </button>
+                        </div>
+                        <table id="security-table">
+                            <thead>
+                                <tr>
+                                    <th>Incident ID</th>
+                                    <th>Date</th>
+                                    <th>District</th>
+                                    <th>Type</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="security-data">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h3>Incident Trends by District</h3>
+                            <canvas id="security-chart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Incident Type Distribution</h3>
+                            <canvas id="incident-type-chart"></canvas>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- DEVELOPMENT TRACKER -->
+                <section id="development" class="dashboard-section">
+                    <h1 style="color: var(--dark-gray); margin-bottom: 20px;">Development Projects Tracker</h1>
+                    
+                    <div class="data-table-container">
+                        <div class="section-header">
+                            <h2>Active Development Projects</h2>
+                            <button class="btn btn-download" onclick="downloadCSV('projects')">
+                                <span>📥</span> Download CSV
+                            </button>
+                        </div>
+                        <table id="projects-table">
+                            <thead>
+                                <tr>
+                                    <th>Project ID</th>
+                                    <th>Project Name</th>
+                                    <th>District</th>
+                                    <th>Funder</th>
+                                    <th>Budget (GMD)</th>
+                                    <th>Completion</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projects-data">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <!-- COUNCIL PERFORMANCE -->
+                <section id="councils" class="dashboard-section">
+                    <h1 style="color: var(--dark-gray); margin-bottom: 20px;">Area Council Performance</h1>
+                    
+                    <div class="data-table-container">
+                        <div class="section-header">
+                            <h2>Council Financial Performance - Q1 2024</h2>
+                            <button class="btn btn-download" onclick="downloadCSV('councils')">
+                                <span>📥</span> Download CSV
+                            </button>
+                        </div>
+                        <table id="councils-table">
+                            <thead>
+                                <tr>
+                                    <th>Council</th>
+                                    <th>Revenue Target</th>
+                                    <th>Collected</th>
+                                    <th>Collection Rate</th>
+                                    <th>Expenditure</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="councils-data">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <!-- TRADITIONAL LEADERS -->
+                <section id="leaders" class="dashboard-section">
+                    <h1 style="color: var(--dark-gray); margin-bottom: 20px;">Traditional Leadership Directory</h1>
+                    
+                    <div class="leaders-grid" id="leaders-data">
+                        <!-- Data will be populated by JavaScript -->
+                    </div>
+                    
+                    <div class="data-table-container" style="margin-top: 30px;">
+                        <div class="section-header">
+                            <h2>Complete Traditional Leaders Directory</h2>
+                            <button class="btn btn-download" onclick="downloadCSV('leaders')">
+                                <span>📥</span> Download CSV
+                            </button>
+                        </div>
+                        <table id="leaders-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Name</th>
+                                    <th>District</th>
+                                    <th>Village</th>
+                                    <th>Contact</th>
+                                    <th>Years Served</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <!-- PERSONNEL DIRECTORY -->
+                <section id="personnel" class="dashboard-section">
+                    <h1 style="color: var(--dark-gray); margin-bottom: 20px;">Personnel Directory</h1>
+                    
+                    <div class="data-table-container">
+                        <div class="section-header">
+                            <h2>Key Government Officials</h2>
+                            <button class="btn btn-download" onclick="downloadCSV('personnel')">
+                                <span>📥</span> Download CSV
+                            </button>
+                        </div>
+                        <table id="personnel-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Title</th>
+                                    <th>Department</th>
+                                    <th>Contact</th>
+                                    <th>Clearance</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="personnel-data">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <!-- ALERT CENTER -->
+                <section id="alerts" class="dashboard-section">
+                    <h1 style="color: var(--dark-gray); margin-bottom: 20px;">Regional Alert Center</h1>
+                    
+                    <div class="alert-container">
+                        <div class="section-header">
+                            <h2>Active Alerts & Notifications</h2>
+                            <button class="btn btn-alert" onclick="createNewAlert()">
+                                <span>+</span> Create New Alert
+                            </button>
+                        </div>
+                        
+                        <div id="alerts-list">
+                            <!-- Alerts will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Other sections (health, agriculture, education, infrastructure, reports) would follow similar patterns -->
+                
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==============================
+        // COMPLETE DATABASE - ALL TABLES
+        // ==============================
+        
+        // 1. DISTRICTS OF LOWER RIVER REGION
+        const districts = [
+            { id: 1, name: "Jarra West", capital: "Soma", population: 82500, area_km2: 425 },
+            { id: 2, name: "Jarra Central", capital: "Jarra Soma", population: 51200, area_km2: 310 },
+            { id: 3, name: "Jarra East", capital: "Jali", population: 38700, area_km2: 285 },
+            { id: 4, name: "Kiang West", capital: "Dumbuto", population: 46500, area_km2: 395 },
+            { id: 5, name: "Kiang Central", capital: "Kiang Kwinella", population: 42100, area_km2: 320 },
+            { id: 6, name: "Kiang East", capital: "Kwinella", population: 39800, area_km2: 295 }
+        ];
+
+        // 2. VILLAGES WITH ALKALOS (Traditional Village Heads)
+        const villages = [
+            { id: 1, district_id: 1, name: "Soma", alkalos_name: "Alhagie Lamin Ceesay", population: 18500, contact: "N/A" },
+            { id: 2, district_id: 1, name: "Bureng", alkalos_name: "Ousman Jallow", population: 4200, contact: "+220-1234567" },
+            { id: 3, district_id: 1, name: "Kwinella", alkalos_name: "Ebrima Sanyang", population: 3200, contact: "+220-2345678" },
+            { id: 4, district_id: 1, name: "Badume", alkalos_name: "Modou Njie", population: 2100, contact: "N/A" },
+            { id: 5, district_id: 2, name: "Jarra Soma", alkalos_name: "Alhagie Demba Jawo", population: 8400, contact: "+220-3456789" },
+            { id: 6, district_id: 2, name: "Sankwia", alkalos_name: "Binta Jallow", population: 3800, contact: "+220-4567890" },
+            { id: 7, district_id: 2, name: "Brikama Ba", alkalos_name: "Lamin S. Jatta", population: 5200, contact: "N/A" },
+            { id: 8, district_id: 3, name: "Jali", alkalos_name: "Alhagie Malick Njie", population: 3100, contact: "+220-5678901" },
+            { id: 9, district_id: 3, name: "Pakaliba", alkalos_name: "Fatou B. Njie", population: 2800, contact: "N/A" },
+            { id: 10, district_id: 3, name: "Kuli Kunda", alkalos_name: "Omar Jallow", population: 1900, contact: "+220-6789012" },
+            { id: 11, district_id: 4, name: "Dumbuto", alkalos_name: "Alhagie Lamin Manneh", population: 2600, contact: "+220-7890123" },
+            { id: 12, district_id: 4, name: "Tendaba", alkalos_name: "Mariama Sarr", population: 1500, contact: "N/A" },
+            { id: 13, district_id: 4, name: "Massembe", alkalos_name: "Yankuba Colley", population: 3200, contact: "+220-8901234" },
+            { id: 14, district_id: 5, name: "Kiang Kwinella", alkalos_name: "Alhagie Saikou Jawara", population: 4100, contact: "+220-9012345" },
+            { id: 15, district_id: 5, name: "Jiroff", alkalos_name: "Hawa Bah", population: 2900, contact: "N/A" },
+            { id: 16, district_id: 5, name: "Darsilami", alkalos_name: "Kebba K. Manneh", population: 3400, contact: "+220-0123456" },
+            { id: 17, district_id: 6, name: "Kwinella", alkalos_name: "Alhagie Abdoulie Jobe", population: 3700, contact: "N/A" },
+            { id: 18, district_id: 6, name: "Dumbutu", alkalos_name: "Ami Njie", population: 2200, contact: "+220-1122334" },
+            { id: 19, district_id: 6, name: "Sutukoba", alkalos_name: "Lamin B. Camara", population: 3100, contact: "+220-2233445" }
+        ];
+
+        // 3. SEYFOS (District Chiefs)
+        const seyfos = [
+            { id: 1, district_id: 1, name: "Alhagie Demba Jawo", title: "Seyfo Jarra West", years_served: 12, contact: "+220-3344556" },
+            { id: 2, district_id: 2, name: "Alhagie Lamin S. Jatta", title: "Seyfo Jarra Central", years_served: 8, contact: "+220-4455667" },
+            { id: 3, district_id: 3, name: "Alhagie Malick Njie", title: "Seyfo Jarra East", years_served: 15, contact: "+220-5566778" },
+            { id: 4, district_id: 4, name: "Alhagie Lamin Manneh", title: "Seyfo Kiang West", years_served: 10, contact: "+220-6677889" },
+            { id: 5, district_id: 5, name: "Alhagie Saikou Jawara", title: "Seyfo Kiang Central", years_served: 7, contact: "+220-7788990" },
+            { id: 6, district_id: 6, name: "Alhagie Abdoulie Jobe", title: "Seyfo Kiang East", years_served: 9, contact: "+220-8899001" }
+        ];
+
+        // 4. SECURITY INCIDENTS
+        const securityIncidents = [
+            { id: "SEC001", district_id: 1, village_id: 1, type: "Theft", severity: "Medium", date: "2024-01-15", description: "Livestock theft in Soma market", status: "Investigation Complete", reported_by: "Police Soma" },
+            { id: "SEC002", district_id: 4, village_id: 11, type: "Public Disorder", severity: "High", date: "2024-01-18", description: "Land boundary dispute in Dumbuto", status: "Under Investigation", reported_by: "DSP Kiang West" },
+            { id: "SEC003", district_id: 2, village_id: 6, type: "Road Accident", severity: "Critical", date: "2024-01-20", description: "Fatal accident on Trans-Gambia Highway", status: "Resolved", reported_by: "Traffic Unit" },
+            { id: "SEC004", district_id: 1, village_id: 2, type: "Illegal Fishing", severity: "Low", date: "2024-01-22", description: "Unauthorized fishing activity", status: "Reported", reported_by: "Fisheries Dept" },
+            { id: "SEC005", district_id: 5, village_id: 15, type: "Fire Outbreak", severity: "High", date: "2024-01-25", description: "Bush fire threatening farmlands", status: "Emergency Response", reported_by: "Fire Service" },
+            { id: "SEC006", district_id: 3, village_id: 9, type: "Missing Person", severity: "Medium", date: "2024-01-26", description: "17-year-old missing from Pakaliba", status: "Search Ongoing", reported_by: "Family Reported" },
+            { id: "SEC007", district_id: 6, village_id: 18, type: "Border Security", severity: "Medium", date: "2024-01-28", description: "Suspected irregular border movement", status: "Under Patrol", reported_by: "Immigration" }
+        ];
+
+        // 5. DEVELOPMENT PROJECTS
+        const developmentProjects = [
+            { id: "DEV001", district_id: 1, village_id: 1, name: "Soma Market Expansion", funder: "World Bank", budget: 4500000, start_date: "2023-06-01", end_date: "2024-05-30", completion: 78, status: "Ongoing" },
+            { id: "DEV002", district_id: 4, village_id: 12, name: "Tendaba Eco-Tourism Center", funder: "Govt of Gambia", budget: 3200000, start_date: "2023-09-15", end_date: "2024-08-14", completion: 45, status: "Ongoing" },
+            { id: "DEV003", district_id: 2, village_id: 5, name: "Jarra Soma Health Center", funder: "EU Development Fund", budget: 5800000, start_date: "2023-03-01", end_date: "2024-02-28", completion: 92, status: "Nearing Completion" },
+            { id: "DEV004", district_id: 5, village_id: 14, name: "Kiang Kwinella Solar Water Project", funder: "UNDP", budget: 2100000, start_date: "2023-11-01", end_date: "2024-04-30", completion: 60, status: "Ongoing" },
+            { id: "DEV005", district_id: 3, village_id: 8, name: "Jali Rice Irrigation Scheme", funder: "IFAD", budget: 8900000, start_date: "2022-12-01", end_date: "2024-06-30", completion: 85, status: "Ongoing" },
+            { id: "DEV006", district_id: 6, village_id: 17, name: "Kwinella Road Rehabilitation", funder: "Govt of Gambia", budget: 6700000, start_date: "2024-01-15", end_date: "2024-07-14", completion: 15, status: "Just Started" },
+            { id: "DEV007", district_id: 1, village_id: 3, name: "Kwinella Youth ICT Center", funder: "UNICEF", budget: 3400000, start_date: "2023-08-01", end_date: "2024-03-31", completion: 95, status: "Final Phase" }
+        ];
+
+        // 6. AREA COUNCIL PERFORMANCE
+        const councilPerformance = [
+            { council_id: "AC001", district_id: 1, name: "Jarra West Council", revenue_target: 1250000, revenue_collected: 987500, expenditure_budget: 1100000, expenditure_actual: 1025000, service_rating: 78 },
+            { council_id: "AC002", district_id: 2, name: "Jarra Central Council", revenue_target: 980000, revenue_collected: 812000, expenditure_budget: 950000, expenditure_actual: 890000, service_rating: 82 },
+            { council_id: "AC003", district_id: 3, name: "Jarra East Council", revenue_target: 890000, revenue_collected: 734000, expenditure_budget: 870000, expenditure_actual: 810000, service_rating: 75 },
+            { council_id: "AC004", district_id: 4, name: "Kiang West Council", revenue_target: 1100000, revenue_collected: 925000, expenditure_budget: 1050000, expenditure_actual: 980000, service_rating: 80 },
+            { council_id: "AC005", district_id: 5, name: "Kiang Central Council", revenue_target: 950000, revenue_collected: 798000, expenditure_budget: 920000, expenditure_actual: 865000, service_rating: 77 },
+            { council_id: "AC006", district_id: 6, name: "Kiang East Council", revenue_target: 870000, revenue_collected: 713000, expenditure_budget: 850000, expenditure_actual: 795000, service_rating: 73 }
+        ];
+
+        // 7. HEALTH SECTOR DATA
+        const healthData = [
+            { district_id: 1, malaria_cases: 142, cholera_cases: 0, vaccination_rate: 89, drug_availability: 75, facility_count: 8 },
+            { district_id: 2, malaria_cases: 98, cholera_cases: 3, vaccination_rate: 85, drug_availability: 70, facility_count: 6 },
+            { district_id: 3, malaria_cases: 115, cholera_cases: 1, vaccination_rate: 91, drug_availability: 82, facility_count: 5 },
+            { district_id: 4, malaria_cases: 87, cholera_cases: 0, vaccination_rate: 92, drug_availability: 80, facility_count: 7 },
+            { district_id: 5, malaria_cases: 103, cholera_cases: 2, vaccination_rate: 88, drug_availability: 78, facility_count: 6 },
+            { district_id: 6, malaria_cases: 76, cholera_cases: 0, vaccination_rate: 95, drug_availability: 85, facility_count: 5 }
+        ];
+
+        // 8. PERSONNEL DIRECTORY
+        const personnel = [
+            { id: "PER001", name: "Hon. Alhagie S. Jawara", title: "Regional Governor", department: "Office of The Governor", phone: "+220-1234567", email: "gov.lrr@gov.gm", clearance: "Top Secret", status: "Active" },
+            { id: "PER002", name: "Superintendent Lamin Ceesay", title: "Regional Police Commander", department: "Security", phone: "+220-2345678", email: "police.lrr@gov.gm", clearance: "Secret", status: "Active" },
+            { id: "PER003", name: "Mr. Omar Jallow", title: "Regional Immigration Head", department: "Security", phone: "+220-3456789", email: "immigration.lrr@gov.gm", clearance: "Secret", status: "Active" },
+            { id: "PER004", name: "Dr. Fatou B. Njie", title: "Regional Health Director", department: "Health", phone: "+220-4567890", email: "health.lrr@gov.gm", clearance: "Confidential", status: "Active" },
+            { id: "PER005", name: "Mr. Ebrima Sanyang", title: "Regional Agriculture Director", department: "Agriculture", phone: "+220-5678901", email: "agric.lrr@gov.gm", clearance: "Confidential", status: "Active" },
+            { id: "PER006", name: "Mr. Lamin S. Jatta", title: "Jarra West Council Chairman", department: "Local Government", phone: "+220-6789012", email: "council.jw@gov.gm", clearance: "Confidential", status: "Active" },
+            { id: "PER007", name: "Ms. Binta Jallow", title: "Jarra Central Council Chairperson", department: "Local Government", phone: "+220-7890123", email: "council.jc@gov.gm", clearance: "Confidential", status: "Active" },
+            { id: "PER010", name: "Mr. Malick Njie", title: "UNDP Regional Coordinator", department: "Development Partners", phone: "+220-0123456", email: "malick.njie@undp.org", clearance: "Confidential", status: "Active" }
+        ];
+
+        // 9. EMERGENCY ALERTS
+        const alerts = [
+            { id: "ALT001", type: "Security", severity: "High", district_id: 1, village_id: 1, message: "Protest planned at Soma Market tomorrow 10AM", issued_by: "Police Commander", time: "2024-01-26 18:30", status: "Active" },
+            { id: "ALT002", type: "Health", severity: "Medium", district_id: 4, village_id: 12, message: "Cholera outbreak suspected in Tendaba", issued_by: "Health Director", time: "2024-01-26 09:15", status: "Monitoring" },
+            { id: "ALT003", type: "Natural Disaster", severity: "High", district_id: 5, village_id: 15, message: "Bush fire spreading toward Jiroff village", issued_by: "Fire Service", time: "2024-01-25 14:45", status: "Emergency" }
+        ];
+
+        // 10. TRADITIONAL LEADERS COMPLETE DIRECTORY
+        const traditionalLeaders = [
+            // Seyfos (District Chiefs)
+            ...seyfos.map(seyfo => ({
+                ...seyfo,
+                type: "Seyfo",
+                village: districts.find(d => d.id === seyfo.district_id)?.capital || ""
+            })),
+            
+            // Selected Alkalos (Village Heads)
+            { type: "Alkalos", name: "Alhagie Lamin Ceesay", title: "Alkalo of Soma", district_id: 1, village: "Soma", contact: "N/A", years_served: 8 },
+            { type: "Alkalos", name: "Ousman Jallow", title: "Alkalo of Bureng", district_id: 1, village: "Bureng", contact: "+220-1234567", years_served: 5 },
+            { type: "Alkalos", name: "Alhagie Demba Jawo", title: "Alkalo of Jarra Soma", district_id: 2, village: "Jarra Soma", contact: "+220-3456789", years_served: 12 },
+            { type: "Alkalos", name: "Alhagie Lamin Manneh", title: "Alkalo of Dumbuto", district_id: 4, village: "Dumbuto", contact: "+220-7890123", years_served: 10 },
+            { type: "Alkalos", name: "Alhagie Saikou Jawara", title: "Alkalo of Kiang Kwinella", district_id: 5, village: "Kiang Kwinella", contact: "+220-9012345", years_served: 7 },
+            { type: "Alkalos", name: "Alhagie Abdoulie Jobe", title: "Alkalo of Kwinella", district_id: 6, village: "Kwinella", contact: "N/A", years_served: 9 },
+            
+            // Other traditional leaders
+            { type: "Imam", name: "Alhagie Cherno Jallow", title: "Chief Imam of Jarra West", district_id: 1, village: "Soma", contact: "+220-9988776", years_served: 20 },
+            { type: "Imam", name: "Alhagie Omar Touray", title: "Chief Imam of Kiang West", district_id: 4, village: "Dumbuto", contact: "N/A", years_served: 15 },
+            { type: "Council of Elders", name: "Council of Elders - Jarra East", title: "Council Chairman", district_id: 3, village: "Jali", contact: "+220-8877665", years_served: 25 }
+        ];
+
+        // ==============================
+        // DASHBOARD INITIALIZATION
+        // ==============================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize navigation
+            initNavigation();
+            
+            // Initialize map
+            initMap();
+            
+            // Populate all data tables
+            populateSecurityData();
+            populateProjectsData();
+            populateCouncilsData();
+            populateLeadersData();
+            populatePersonnelData();
+            populateAlertsData();
+            
+            // Initialize charts
+            initCharts();
+            
+            // Update alert count
+            updateAlertCount();
+        });
+
+        function initNavigation() {
+            const navItems = document.querySelectorAll('.sidebar-nav li');
+            const sections = document.querySelectorAll('.dashboard-section');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active class from all items
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Hide all sections
+                    sections.forEach(section => section.classList.remove('active'));
+                    
+                    // Show selected section
+                    const sectionId = this.getAttribute('data-section');
+                    document.getElementById(sectionId).classList.add('active');
+                });
+            });
+        }
+
+        function initMap() {
+            // Initialize map centered on Lower River Region
+            const map = L.map('region-map').setView([13.4167, -15.55], 10);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Define district boundaries (simplified coordinates)
+            const districtBounds = {
+                1: [[13.35, -15.55], [13.45, -15.45]], // Jarra West
+                2: [[13.38, -15.50], [13.45, -15.42]], // Jarra Central
+                3: [[13.30, -15.43], [13.40, -15.35]], // Jarra East
+                4: [[13.42, -15.85], [13.50, -15.78]], // Kiang West
+                5: [[13.35, -15.78], [13.42, -15.70]], // Kiang Central
+                6: [[13.30, -15.70], [13.37, -15.63]]  // Kiang East
+            };
+            
+            // Add district polygons
+            districts.forEach(district => {
+                const bounds = districtBounds[district.id];
+                if (bounds) {
+                    const polygon = L.rectangle(bounds, {
+                        color: '#FFD700',
+                        weight: 2,
+                        fillColor: 'rgba(255, 215, 0, 0.2)',
+                        fillOpacity: 0.3
+                    }).addTo(map);
+                    
+                    polygon.bindPopup(`
+                        <strong>${district.name}</strong><br>
+                        Capital: ${district.capital}<br>
+                        Population: ${district.population.toLocaleString()}<br>
+                        Area: ${district.area_km2} km²
+                    `);
+                }
+            });
+            
+            // Add village markers
+            villages.forEach(village => {
+                const district = districts.find(d => d.id === village.district_id);
+                const lat = 13.4167 + (Math.random() - 0.5) * 0.1;
+                const lng = -15.55 + (Math.random() - 0.5) * 0.2;
+                
+                const marker = L.marker([lat, lng]).addTo(map);
+                marker.bindPopup(`
+                    <strong>${village.name}</strong><br>
+                    District: ${district?.name || 'Unknown'}<br>
+                    Alkalo: ${village.alkalos_name}<br>
+                    Population: ${village.population.toLocaleString()}
+                `);
+            });
+            
+            // Add incident markers
+            securityIncidents.forEach(incident => {
+                if (incident.severity === 'High' || incident.severity === 'Critical') {
+                    const lat = 13.4167 + (Math.random() - 0.5) * 0.1;
+                    const lng = -15.55 + (Math.random() - 0.5) * 0.2;
+                    
+                    const icon = L.divIcon({
+                        className: 'incident-marker',
+                        html: '<div style="background-color: red; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>',
+                        iconSize: [20, 20]
+                    });
+                    
+                    const marker = L.marker([lat, lng], { icon: icon }).addTo(map);
+                    marker.bindPopup(`
+                        <strong>${incident.type} Incident</strong><br>
+                        Severity: ${incident.severity}<br>
+                        Date: ${incident.date}<br>
+                        Status: ${incident.status}<br>
+                        ${incident.description}
+                    `);
+                }
+            });
+        }
+
+        function populateSecurityData() {
+            const tbody = document.getElementById('security-data');
+            tbody.innerHTML = '';
+            
+            securityIncidents.forEach(incident => {
+                const district = districts.find(d => d.id === incident.district_id);
+                const village = villages.find(v => v.id === incident.village_id);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${incident.id}</td>
+                    <td>${incident.date}</td>
+                    <td>${district?.name || 'Unknown'}</td>
+                    <td>${incident.type}</td>
+                    <td><span class="status ${incident.severity === 'High' || incident.severity === 'Critical' ? 'status-critical' : incident.severity === 'Medium' ? 'status-pending' : 'status-active'}">${incident.severity}</span></td>
+                    <td><span class="status ${incident.status === 'Emergency Response' ? 'status-critical' : incident.status === 'Under Investigation' ? 'status-pending' : 'status-active'}">${incident.status}</span></td>
+                    <td><button class="btn" onclick="viewIncident('${incident.id}')" style="padding: 5px 10px; font-size: 0.9rem;">View</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function populateProjectsData() {
+            const tbody = document.getElementById('projects-data');
+            tbody.innerHTML = '';
+            
+            developmentProjects.forEach(project => {
+                const district = districts.find(d => d.id === project.district_id);
+                const village = villages.find(v => v.id === project.village_id);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${project.id}</td>
+                    <td>${project.name}</td>
+                    <td>${district?.name || 'Unknown'}</td>
+                    <td>${project.funder}</td>
+                    <td>${project.budget.toLocaleString()}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="flex: 1; height: 10px; background-color: #eee; border-radius: 5px;">
+                                <div style="height: 100%; width: ${project.completion}%; background-color: ${project.completion > 70 ? '#28a745' : project.completion > 40 ? '#ffc107' : '#dc3545'}; border-radius: 5px;"></div>
+                            </div>
+                            <span>${project.completion}%</span>
+                        </div>
+                    </td>
+                    <td><span class="status ${project.status === 'Emergency Response' ? 'status-critical' : project.status === 'Under Investigation' ? 'status-pending' : 'status-completed'}">${project.status}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function populateCouncilsData() {
+            const tbody = document.getElementById('councils-data');
+            tbody.innerHTML = '';
+            
+            councilPerformance.forEach(council => {
+                const district = districts.find(d => d.id === council.district_id);
+                const collectionRate = Math.round((council.revenue_collected / council.revenue_target) * 100);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${council.name}</td>
+                    <td>GMD ${council.revenue_target.toLocaleString()}</td>
+                    <td>GMD ${council.revenue_collected.toLocaleString()}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="flex: 1; height: 10px; background-color: #eee; border-radius: 5px;">
+                                <div style="height: 100%; width: ${collectionRate}%; background-color: ${collectionRate > 85 ? '#28a745' : collectionRate > 70 ? '#ffc107' : '#dc3545'}; border-radius: 5px;"></div>
+                            </div>
+                            <span>${collectionRate}%</span>
+                        </div>
+                    </td>
+                    <td>GMD ${council.expenditure_actual.toLocaleString()}</td>
+                    <td><span class="status ${council.service_rating > 80 ? 'status-active' : council.service_rating > 70 ? 'status-pending' : 'status-critical'}">${council.service_rating}/100</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function populateLeadersData() {
+            const leadersGrid = document.getElementById('leaders-data');
+            leadersGrid.innerHTML = '';
+            
+            // Display Seyfos in the grid
+            seyfos.forEach(seyfo => {
+                const district = districts.find(d => d.id === seyfo.district_id);
+                
+                const card = document.createElement('div');
+                card.className = 'leader-card';
+                card.innerHTML = `
+                    <div class="leader-title">${seyfo.title}</div>
+                    <div class="leader-name">${seyfo.name}</div>
+                    <div style="color: #666; margin-bottom: 10px;">District: ${district?.name || 'Unknown'}</div>
+                    <div class="leader-contact">
+                        <div><strong>Years Served:</strong> ${seyfo.years_served}</div>
+                        <div><strong>Contact:</strong> ${seyfo.contact}</div>
+                    </div>
+                `;
+                leadersGrid.appendChild(card);
+            });
+            
+            // Also populate the complete table
+            const leadersTable = document.querySelector('#leaders-table tbody');
+            leadersTable.innerHTML = '';
+            
+            traditionalLeaders.forEach(leader => {
+                const district = districts.find(d => d.id === leader.district_id);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${leader.title || leader.type}</td>
+                    <td>${leader.name}</td>
+                    <td>${district?.name || 'Unknown'}</td>
+                    <td>${leader.village}</td>
+                    <td>${leader.contact || 'N/A'}</td>
+                    <td>${leader.years_served || 'N/A'}</td>
+                `;
+                leadersTable.appendChild(row);
+            });
+        }
+
+        function populatePersonnelData() {
+            const tbody = document.getElementById('personnel-data');
+            tbody.innerHTML = '';
+            
+            personnel.forEach(person => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${person.name}</td>
+                    <td>${person.title}</td>
+                    <td>${person.department}</td>
+                    <td>
+                        <div>Phone: ${person.phone}</div>
+                        <div>Email: ${person.email}</div>
+                    </td>
+                    <td><span class="status ${person.clearance === 'Top Secret' ? 'status-critical' : person.clearance === 'Secret' ? 'status-pending' : 'status-active'}">${person.clearance}</span></td>
+                    <td><span class="status status-active">${person.status}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function populateAlertsData() {
+            const alertsList = document.getElementById('alerts-list');
+            alertsList.innerHTML = '';
+            
+            alerts.forEach(alert => {
+                const district = districts.find(d => d.id === alert.district_id);
+                const village = villages.find(v => v.id === alert.village_id);
+                
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert-item ${alert.severity === 'High' ? '' : alert.severity === 'Medium' ? 'warning' : 'info'}`;
+                alertDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong style="font-size: 1.1rem;">${alert.type} ALERT: ${alert.severity} Priority</strong>
+                        <span style="font-size: 0.9rem; color: #666;">${alert.time}</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">${alert.message}</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                        <span>Location: ${district?.name || 'Unknown'} - ${village?.name || 'Unknown'}</span>
+                        <span>Issued by: ${alert.issued_by}</span>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; gap: 10px;">
+                        <button class="btn" onclick="acknowledgeAlert('${alert.id}')" style="padding: 5px 10px; font-size: 0.9rem;">Acknowledge</button>
+                        <button class="btn" onclick="escalateAlert('${alert.id}')" style="padding: 5px 10px; font-size: 0.9rem;">Escalate</button>
+                    </div>
+                `;
+                alertsList.appendChild(alertDiv);
+            });
+        }
+
+        function initCharts() {
+            // Security incidents by district
+            const securityCtx = document.getElementById('security-chart').getContext('2d');
+            const districtIncidentCounts = {};
+            
+            securityIncidents.forEach(incident => {
+                const district = districts.find(d => d.id === incident.district_id);
+                if (district) {
+                    districtIncidentCounts[district.name] = (districtIncidentCounts[district.name] || 0) + 1;
+                }
+            });
+            
+            new Chart(securityCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(districtIncidentCounts),
+                    datasets: [{
+                        label: 'Number of Incidents',
+                        data: Object.values(districtIncidentCounts),
+                        backgroundColor: ['#FFD700', '#C0C0C0', '#B9F2FF', '#90EE90', '#FF6B6B', '#FFA500'],
+                        borderColor: '#2F4F4F',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+            
+            // Incident type distribution
+            const incidentTypeCtx = document.getElementById('incident-type-chart').getContext('2d');
+            const incidentTypeCounts = {};
+            
+            securityIncidents.forEach(incident => {
+                incidentTypeCounts[incident.type] = (incidentTypeCounts[incident.type] || 0) + 1;
+            });
+            
+            new Chart(incidentTypeCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(incidentTypeCounts),
+                    datasets: [{
+                        data: Object.values(incidentTypeCounts),
+                        backgroundColor: ['#FFD700', '#C0C0C0', '#B9F2FF', '#90EE90', '#FF6B6B', '#FFA500']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        function updateAlertCount() {
+            const criticalAlerts = alerts.filter(a => a.severity === 'High').length;
+            document.getElementById('alert-count').textContent = `${criticalAlerts} CRITICAL ALERT${criticalAlerts !== 1 ? 'S' : ''}`;
+        }
+
+        // ==============================
+        // DATA EXPORT FUNCTIONS
+        // ==============================
+        
+        function downloadCSV(dataType) {
+            let csvData = '';
+            let filename = '';
+            
+            switch(dataType) {
+                case 'security':
+                    csvData = convertToCSV(securityIncidents);
+                    filename = 'security_incidents_lrr.csv';
+                    break;
+                case 'projects':
+                    csvData = convertToCSV(developmentProjects);
+                    filename = 'development_projects_lrr.csv';
+                    break;
+                case 'councils':
+                    csvData = convertToCSV(councilPerformance);
+                    filename = 'council_performance_lrr.csv';
+                    break;
+                case 'leaders':
+                    csvData = convertToCSV(traditionalLeaders);
+                    filename = 'traditional_leaders_lrr.csv';
+                    break;
+                case 'personnel':
+                    csvData = convertToCSV(personnel);
+                    filename = 'personnel_directory_lrr.csv';
+                    break;
+                case 'health':
+                    csvData = convertToCSV(healthData);
+                    filename = 'health_sector_lrr.csv';
+                    break;
+                case 'villages':
+                    csvData = convertToCSV(villages);
+                    filename = 'villages_alkalos_lrr.csv';
+                    break;
+                case 'districts':
+                    csvData = convertToCSV(districts);
+                    filename = 'districts_lrr.csv';
+                    break;
+            }
+            
+            downloadFile(csvData, filename);
+        }
+        
+        function convertToCSV(objArray) {
+            if (objArray.length === 0) return '';
+            
+            const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
+            let str = '';
+            
+            // Headers
+            const headers = Object.keys(array[0]);
+            str += headers.join(',') + '\r\n';
+            
+            // Data rows
+            for (let i = 0; i < array.length; i++) {
+                let line = '';
+                for (let j = 0; j < headers.length; j++) {
+                    if (line !== '') line += ',';
+                    line += `"${array[i][headers[j]] || ''}"`;
+                }
+                str += line + '\r\n';
+            }
+            
+            return str;
+        }
+        
+        function downloadFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function downloadAllData() {
+            const datasets = [
+                { name: 'districts', data: districts },
+                { name: 'villages_alkalos', data: villages },
+                { name: 'seyfos', data: seyfos },
+                { name: 'security_incidents', data: securityIncidents },
+                { name: 'development_projects', data: developmentProjects },
+                { name: 'council_performance', data: councilPerformance },
+                { name: 'health_data', data: healthData },
+                { name: 'personnel_directory', data: personnel },
+                { name: 'emergency_alerts', data: alerts },
+                { name: 'traditional_leaders', data: traditionalLeaders }
+            ];
+            
+            const zip = new JSZip();
+            
+            datasets.forEach(dataset => {
+                const csv = convertToCSV(dataset.data);
+                zip.file(`lrr_${dataset.name}.csv`, csv);
+            });
+            
+            zip.generateAsync({ type: 'blob' }).then(content => {
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'lower_river_region_complete_data.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        function downloadMapData() {
+            const mapData = {
+                districts: districts,
+                villages: villages.map(v => ({
+                    name: v.name,
+                    district: districts.find(d => d.id === v.district_id)?.name,
+                    alkalos: v.alkalos_name,
+                    population: v.population
+                })),
+                incidents: securityIncidents.map(i => ({
+                    type: i.type,
+                    severity: i.severity,
+                    location: districts.find(d => d.id === i.district_id)?.name,
+                    date: i.date,
+                    status: i.status
+                }))
+            };
+            
+            const content = JSON.stringify(mapData, null, 2);
+            downloadFile(content, 'lrr_map_data.json');
+        }
+        
+        // ==============================
+        // DASHBOARD ACTION FUNCTIONS
+        // ==============================
+        
+        function generateWeeklyReport() {
+            const reportDate = new Date().toISOString().split('T')[0];
+            const incidentCount = securityIncidents.length;
+            const criticalIncidents = securityIncidents.filter(i => i.severity === 'Critical').length;
+            const projectCount = developmentProjects.length;
+            const completedProjects = developmentProjects.filter(p => p.completion >= 90).length;
+            
+            const report = `
+                WEEKLY GOVERNOR'S REPORT
+                Lower River Region
+                Date: ${reportDate}
+                
+                SECURITY SUMMARY:
+                - Total incidents this week: ${incidentCount}
+                - Critical incidents: ${criticalIncidents}
+                - Most affected district: ${districts[0]?.name}
+                
+                DEVELOPMENT UPDATE:
+                - Active projects: ${projectCount}
+                - Projects nearing completion: ${completedProjects}
+                - Overall completion rate: 72%
+                
+                FINANCIAL OVERVIEW:
+                - Revenue collection: 84% of target
+                - Total collected: GMD 4.97M
+                
+                RECOMMENDATIONS:
+                1. Increase police patrols in Jarra West
+                2. Accelerate Soma Market Expansion project
+                3. Address drug shortages in health facilities
+                
+                Prepared by: Governor's Office
+                For: Office of the President
+            `;
+            
+            alert('Weekly report generated successfully!');
+            downloadFile(report, `governors_report_${reportDate}.txt`);
+        }
+        
+        function conveneRECSEC() {
+            const members = personnel.filter(p => 
+                p.department === 'Security' || 
+                p.title.includes('Council') || 
+                p.title.includes('Director')
+            );
+            
+            const meetingNotice = `
+                URGENT: RECSEC MEETING NOTICE
+                
+                To: All RECSEC Members
+                From: Office of the Governor
+                Date: ${new Date().toLocaleDateString()}
+                Time: IMMEDIATELY
+                Venue: Governor's Conference Room, Soma
+                
+                Agenda:
+                1. Current security situation review
+                2. Recent incidents assessment
+                3. Coordination of security operations
+                4. Any other business
+                
+                Required to attend:
+                ${members.map(m => `- ${m.name} (${m.title})`).join('\n')}
+                
+                This meeting is MANDATORY.
+                Governor: Hon. Alhagie S. Jawara
+            `;
+            
+            alert('RECSEC meeting convened! Notices sent to all members.');
+            downloadFile(meetingNotice, 'recsec_meeting_notice.txt');
+        }
+        
+        function sendRegionalAlert() {
+            const alertMessage = prompt('Enter alert message to send to all districts:');
+            if (alertMessage) {
+                const alert = {
+                    id: 'ALT' + Date.now(),
+                    type: 'Administrative',
+                    severity: 'High',
+                    district_id: 0,
+                    village_id: 0,
+                    message: alertMessage,
+                    issued_by: 'Governor\'s Office',
+                    time: new Date().toISOString(),
+                    status: 'Active'
+                };
+                
+                alerts.unshift(alert);
+                populateAlertsData();
+                updateAlertCount();
+                
+                alert('Regional alert sent successfully!');
+            }
+        }
+        
+        function viewIncident(incidentId) {
+            const incident = securityIncidents.find(i => i.id === incidentId);
+            if (incident) {
+                const district = districts.find(d => d.id === incident.district_id);
+                const village = villages.find(v => v.id === incident.village_id);
+                
+                const details = `
+                    INCIDENT DETAILS
+                    ================
+                    ID: ${incident.id}
+                    Type: ${incident.type}
+                    Severity: ${incident.severity}
+                    Date: ${incident.date}
+                    Location: ${district?.name} - ${village?.name}
+                    Status: ${incident.status}
+                    
+                    Description:
+                    ${incident.description}
+                    
+                    Reported by: ${incident.reported_by}
+                    
+                    Recommended Actions:
+                    1. ${incident.severity === 'Critical' ? 'Deploy rapid response team' : 'Monitor situation'}
+                    2. ${incident.type === 'Fire Outbreak' ? 'Coordinate with fire service' : 'Investigate further'}
+                    3. Report to higher authorities if necessary
+                `;
+                
+                alert(details);
+            }
+        }
+        
+        function acknowledgeAlert(alertId) {
+            const alertIndex = alerts.findIndex(a => a.id === alertId);
+            if (alertIndex !== -1) {
+                alerts[alertIndex].status = 'Acknowledged';
+                populateAlertsData();
+                updateAlertCount();
+                alert('Alert acknowledged!');
+            }
+        }
+        
+        function escalateAlert(alertId) {
+            const alertItem = alerts.find(a => a.id === alertId);
+            if (alertItem) {
+                const escalation = `
+                    ESCALATION NOTICE
+                    =================
+                    From: Governor's Office, LRR
+                    To: National Security Council
+                    Date: ${new Date().toLocaleDateString()}
+                    
+                    Subject: Escalation of ${alertItem.type} Alert
+                    Alert ID: ${alertItem.id}
+                    Severity: ${alertItem.severity}
+                    
+                    Details:
+                    ${alertItem.message}
+                    
+                    Request:
+                    Immediate attention and support required.
+                    
+                    Signed,
+                    Hon. Alhagie S. Jawara
+                    Regional Governor, Lower River Region
+                `;
+                
+                downloadFile(escalation, `escalation_${alertId}.txt`);
+                alert('Alert escalated to national level!');
+            }
+        }
+        
+        function createNewAlert() {
+            const type = prompt('Alert type (Security/Health/Infrastructure/Other):');
+            const severity = prompt('Severity (Low/Medium/High/Critical):');
+            const message = prompt('Alert message:');
+            const district = prompt('Affected district (1-6):');
+            
+            if (type && severity && message && district) {
+                const newAlert = {
+                    id: 'ALT' + Date.now(),
+                    type: type,
+                    severity: severity,
+                    district_id: parseInt(district),
+                    village_id: 1,
+                    message: message,
+                    issued_by: 'Governor\'s Office',
+                    time: new Date().toISOString(),
+                    status: 'Active'
+                };
+                
+                alerts.unshift(newAlert);
+                populateAlertsData();
+                updateAlertCount();
+                
+                alert('New alert created successfully!');
+            }
+        }
+
+        // Add JSZip for zip file creation
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"><\/script>');
+    </script>
+</body>
+</html>
