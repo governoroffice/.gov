@@ -1,91 +1,1775 @@
-<!doctype html>
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lower River Region — Governor Dashboard (Single-file Government System)</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    :root{--gold:#d4af37;--silver:#c0c0c0;--diamond:#b9f2ff;--lightgreen:#b7e4c7;--darkgray:#2f3437;--bg: linear-gradient(180deg, rgba(212,175,55,0.04), rgba(185,242,255,0.02));font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--darkgray)}
-    header{background:linear-gradient(90deg,var(--gold),var(--silver));padding:12px 18px;color:#111;display:flex;align-items:center;gap:12px}
-    header h1{font-size:18px;margin:0}
-    .layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 64px)}
-    aside{background:#fff;padding:14px;border-right:1px solid #eee}
-    .navlink{display:block;padding:10px;border-radius:8px;color:var(--darkgray);text-decoration:none;margin-bottom:6px}
-    .navlink.active{background:linear-gradient(90deg,var(--diamond),#fff);font-weight:700}
-    main{padding:18px}
-    .row{display:flex;gap:12px}
-    .card{background:#fff;padding:12px;border-radius:10px;margin-bottom:12px;box-shadow:0 8px 24px rgba(47,52,55,0.04)}
-    #map{height:420px;border-radius:8px}
-    table{width:100%;border-collapse:collapse}
-    table th,table td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-    .kpis{display:flex;gap:12px;margin-bottom:12px}
-    .kpi{flex:1;padding:12px;border-radius:8px;background:linear-gradient(180deg,var(--lightgreen),#fff)}
-    .btn{padding:8px 12px;border-radius:8px;border:none;background:var(--gold);cursor:pointer}
-    .btn.secondary{background:var(--silver)}
-    .muted{color:#666;font-size:13px}
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    footer{padding:10px;text-align:center;color:#666}
-    pre.small{white-space:pre-wrap;font-size:13px}
-    @media(max-width:900px){.layout{grid-template-columns:1fr} .row{flex-direction:column}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Governor's Dashboard - Lower River Region</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --diamond: #B9F2FF;
+            --dark-blue: #003366;
+            --light-blue: #E6F2FF;
+            --green: #006600;
+            --white: #FFFFFF;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--light-blue) 0%, var(--white) 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header Styles */
+        header {
+            background: linear-gradient(90deg, var(--dark-blue) 0%, #001a33 100%);
+            color: var(--gold);
+            padding: 25px 0;
+            box-shadow: var(--shadow);
+            border-bottom: 5px solid var(--gold);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFD700' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo i {
+            font-size: 2.8rem;
+            color: var(--gold);
+        }
+        
+        .logo-text h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        
+        .logo-text h2 {
+            font-size: 1.2rem;
+            color: var(--silver);
+            font-weight: 400;
+        }
+        
+        .governor-info {
+            text-align: right;
+            border-right: 3px solid var(--gold);
+            padding-right: 20px;
+        }
+        
+        .governor-info h3 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .governor-info p {
+            color: var(--diamond);
+            font-size: 1rem;
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--silver);
+        }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            color: var(--dark-blue);
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 10px;
+        }
+        
+        .panel-title i {
+            color: var(--gold);
+            font-size: 1.5rem;
+        }
+        
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-group label i {
+            color: var(--gold);
+        }
+        
+        select {
+            padding: 12px 15px;
+            border: 2px solid var(--silver);
+            border-radius: 8px;
+            background-color: var(--white);
+            font-size: 1rem;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, var(--gold) 0%, #FFED4E 100%);
+            color: var(--dark-blue);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(255, 215, 0, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(90deg, var(--silver) 0%, #E8E8E8 100%);
+            color: var(--dark-blue);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(192, 192, 192, 0.3);
+        }
+        
+        .btn-diamond {
+            background: linear-gradient(90deg, var(--diamond) 0%, #E6F7FF 100%);
+            color: var(--dark-blue);
+            border: 1px solid var(--diamond);
+        }
+        
+        .btn-diamond:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(185, 242, 255, 0.3);
+        }
+        
+        /* Data Display Area */
+        .data-display {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--silver);
+            overflow-x: auto;
+        }
+        
+        .data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--gold);
+        }
+        
+        .data-header h3 {
+            color: var(--dark-blue);
+            font-size: 1.5rem;
+        }
+        
+        .data-count {
+            background: var(--diamond);
+            color: var(--dark-blue);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        thead {
+            background: linear-gradient(90deg, var(--dark-blue) 0%, #00264d 100%);
+            color: var(--gold);
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--silver);
+        }
+        
+        th {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:hover {
+            background-color: rgba(255, 215, 0, 0.05);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background-color: var(--green);
+        }
+        
+        .status-pending {
+            background-color: #FFA500;
+        }
+        
+        .status-inactive {
+            background-color: #FF0000;
+        }
+        
+        /* Traditional Authority Section */
+        .traditional-section {
+            display: none;
+            background: var(--white);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--silver);
+        }
+        
+        .traditional-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--gold);
+        }
+        
+        .districts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        
+        .district-card {
+            border: 1px solid var(--silver);
+            border-radius: 10px;
+            padding: 20px;
+            background: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+        
+        .district-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: var(--gold);
+        }
+        
+        .district-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--silver);
+        }
+        
+        .district-name {
+            font-size: 1.3rem;
+            color: var(--dark-blue);
+            font-weight: 600;
+        }
+        
+        .village-selector {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+        }
+        
+        /* Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-top: 5px solid var(--gold);
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .modal-header h3 {
+            color: var(--dark-blue);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark-blue);
+            font-weight: 600;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--silver);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px 0;
+            color: var(--dark-blue);
+            border-top: 1px solid var(--silver);
+            font-size: 0.9rem;
+        }
+        
+        .admin-access {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        
+        .admin-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            
+            .governor-info {
+                text-align: center;
+                border-right: none;
+                padding-right: 0;
+                border-bottom: 3px solid var(--gold);
+                padding-bottom: 15px;
+            }
+            
+            .filters {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .districts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div id="loginScreen" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
-    <div style="background:#fff;padding:24px;border-radius:12px;max-width:360px;width:100%;text-align:center;">
-      <h2>Governor Dashboard Login</h2>
-      <input type="password" id="passwordInput" placeholder="Enter password" style="padding:8px;width:100%;margin-top:12px;border-radius:6px;border:1px solid #ccc" />
-      <button class="btn" style="margin-top:12px;width:100%;" onclick="checkPassword()">Login</button>
-      <div id="loginError" class="muted" style="margin-top:8px;display:none;">Incorrect password</div>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-lock" style="font-size: 2.5rem; color: var(--gold); margin-bottom: 15px;"></i>
+                <h3>Administrative Access</h3>
+                <p>Enter password to edit dashboard data</p>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter administrative password">
+                <div id="passwordError" style="color: #FF0000; margin-top: 10px; display: none;">Incorrect password. Please try again.</div>
+            </div>
+            <div class="modal-actions">
+                <button id="loginBtn" class="btn btn-primary">Login</button>
+                <button id="cancelLoginBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
     </div>
-  </div>  <header style="display:none;" id="mainHeader">
-    <div style="width:48px;height:48px;background:var(--darkgray);border-radius:8px"></div>
-    <h1>Lower River Region — Governor Dashboard (Single-file)</h1>
-    <div style="margin-left:auto;display:flex;gap:8px">
-      <button class="btn" id="downloadAllZip">Download All (ZIP)</button>
-      <button class="btn secondary" id="resetData">Reset Sample</button>
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-landmark"></i>
+                    <div class="logo-text">
+                        <h1>Governor's Regional Management Dashboard</h1>
+                        <h2>Lower River Region, The Gambia</h2>
+                    </div>
+                </div>
+                <div class="governor-info">
+                    <h3>HON. SEEDY LAMIN BAH</h3>
+                    <p>Governor, Lower River Region</p>
+                </div>
+                <div class="admin-access">
+                    <button id="adminBtn" class="admin-btn">
+                        <i class="fas fa-user-shield"></i> Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Control Panel -->
+        <section class="control-panel">
+            <div class="panel-title">
+                <i class="fas fa-filter"></i>
+                <h2>Data Filtering & Analysis Panel</h2>
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="stakeholderFilter"><i class="fas fa-users"></i> Key Stakeholders</label>
+                    <select id="stakeholderFilter">
+                        <option value="all">All Stakeholders</option>
+                        <option value="1">1. Regional Council & Local Government</option>
+                        <option value="2">2. Regional Security Committee (RECSEC)</option>
+                        <option value="3">3. Central Government Ministry Heads</option>
+                        <option value="4">4. Traditional Authority Structure</option>
+                        <option value="5">5. Elected National Representatives</option>
+                        <option value="6">6. Alikalos & Grassroots Structures</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="subDeptFilter"><i class="fas fa-sitemap"></i> Sub-Department</label>
+                    <select id="subDeptFilter">
+                        <option value="all">All Sub-Departments</option>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="workCategoryFilter"><i class="fas fa-tasks"></i> Work Categories</label>
+                    <select id="workCategoryFilter">
+                        <option value="all">All Work Categories</option>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="actionFilter"><i class="fas fa-chart-line"></i> Action</label>
+                    <select id="actionFilter">
+                        <option value="view">View Regional Statistics</option>
+                        <option value="download">Download CSV</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="applyFiltersBtn" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Apply Filters
+                </button>
+                <button id="resetFiltersBtn" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> Reset Filters
+                </button>
+                <button id="downloadAllBtn" class="btn btn-diamond">
+                    <i class="fas fa-download"></i> Download All Data (CSV)
+                </button>
+                <button id="viewStatsBtn" class="btn btn-diamond">
+                    <i class="fas fa-chart-bar"></i> View Regional Statistics
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Data Display -->
+        <section class="data-display" id="mainDataDisplay">
+            <div class="data-header">
+                <h3>Regional Data Overview</h3>
+                <div class="data-count">
+                    <span id="dataCount">0</span> Records Found
+                </div>
+            </div>
+            <div id="tableContainer">
+                <!-- Table will be generated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Traditional Authority Display -->
+        <section class="traditional-section" id="traditionalSection">
+            <div class="traditional-header">
+                <h3>Traditional Authority Structure - Districts & Villages</h3>
+                <button id="downloadTraditionalBtn" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Download All Traditional Data
+                </button>
+            </div>
+            <div id="districtsContainer" class="districts-container">
+                <!-- District cards will be generated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>Governor's Dashboard &copy; 2025 - Lower River Region, The Gambia</p>
+            <p>Data last updated: <span id="lastUpdated">June 15, 2025</span></p>
+            <p style="margin-top: 10px; font-size: 0.8rem; color: #666;">Administrative Access Password Protected</p>
+        </footer>
     </div>
-  </header>  <div class="layout" style="display:none;" id="mainLayout">
-    <aside>
-      <nav id="sidebar">
-        <a href="#home" class="navlink active" data-page="home">Home (Overview)</a>
-        <a href="#districts" class="navlink" data-page="districts">Districts</a>
-        <a href="#villages" class="navlink" data-page="villages">Villages</a>
-        <a href="#agriculture" class="navlink" data-page="agriculture">Agriculture</a>
-        <a href="#health" class="navlink" data-page="health">Health</a>
-        <a href="#education" class="navlink" data-page="education">Education</a>
-        <a href="#infrastructure" class="navlink" data-page="infrastructure">Infrastructure</a>
-        <a href="#security" class="navlink" data-page="security">Security</a>
-        <a href="#disaster" class="navlink" data-page="disaster">Disaster Management</a>
-        <a href="#finance" class="navlink" data-page="finance">Finance & Budget</a>
-        <a href="#staff" class="navlink" data-page="staff">Staff Directory</a>
-        <a href="#ngos" class="navlink" data-page="ngos">NGO & Partners</a>
-        <a href="#reports" class="navlink" data-page="reports">Monthly Reports</a>
-      </nav>
-      <hr />
-      <div class="muted">Single-file deploy: drop this file into a GitHub repo and enable GitHub Pages. All CSVs export from the browser.</div>
-    </aside><main id="app"></main>
 
-  </div>  <footer style="display:none;" id="mainFooter">Prototype — Replace sample data with official records before production. Built for Governor — Lower River Region.</footer>  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>  <script>
-    function checkPassword(){
-      const val = document.getElementById('passwordInput').value;
-      if(val==='gambia@2025'){
-        document.getElementById('loginScreen').style.display='none';
-        document.getElementById('mainHeader').style.display='flex';
-        document.getElementById('mainLayout').style.display='grid';
-        document.getElementById('mainFooter').style.display='block';
-        renderHome();
-      } else {
-        document.getElementById('loginError').style.display='block';
-      }
-    }
+    <script>
+        // Data structure for the Lower River Region
+        const regionData = {
+            stakeholders: [
+                {
+                    id: 1,
+                    name: "Regional Council & Local Government",
+                    subDepartments: [
+                        {
+                            id: "1-1",
+                            name: "Finance Department",
+                            workCategories: ["Revenue Collection", "Budgeting", "Procurement", "Financial Reporting"],
+                            data: [
+                                { id: "F1", name: "Tax Collection", status: "Active", target: "85%", achievement: "78%", officer: "Lamin Jallow", contact: "3456789", notes: "Slight shortfall due to delayed payments" },
+                                { id: "F2", name: "Budget Execution", status: "Active", target: "100%", achievement: "92%", officer: "Fatou Njie", contact: "3456790", notes: "On track for end of quarter" },
+                                { id: "F3", name: "Procurement Process", status: "Active", target: "20 contracts", achievement: "15 contracts", officer: "Ousman Ceesay", contact: "3456791", notes: "5 pending approvals" }
+                            ]
+                        },
+                        {
+                            id: "1-2",
+                            name: "Works Department",
+                            workCategories: ["Road Maintenance", "Street Lighting", "Public Buildings", "Infrastructure Projects"],
+                            data: [
+                                { id: "W1", name: "Feeder Road Maintenance", status: "Active", target: "50km", achievement: "42km", officer: "Modou Sarr", contact: "3456792", notes: "Delayed due to heavy rains" },
+                                { id: "W2", name: "Street Lighting Installation", status: "Pending", target: "100 units", achievement: "60 units", officer: "Samba Bah", contact: "3456793", notes: "Awaiting shipment of materials" },
+                                { id: "W3", name: "Public Building Repairs", status: "Active", target: "10 buildings", achievement: "8 buildings", officer: "Mariama Jallow", contact: "3456794", notes: "2 buildings awaiting funds" }
+                            ]
+                        },
+                        {
+                            id: "1-3",
+                            name: "Planning & Development Unit",
+                            workCategories: ["Development Planning", "Project Monitoring", "Policy Implementation", "Data Collection"],
+                            data: [
+                                { id: "P1", name: "Regional Development Plan", status: "Active", target: "Complete draft", achievement: "80% complete", officer: "Abdoulie Touray", contact: "3456795", notes: "Final review with stakeholders next week" },
+                                { id: "P2", name: "Project Monitoring", status: "Active", target: "15 projects", achievement: "12 projects", officer: "Isatou Sanneh", contact: "3456796", notes: "3 projects delayed by contractors" }
+                            ]
+                        },
+                        {
+                            id: "1-4",
+                            name: "Health & Social Services",
+                            workCategories: ["Primary Healthcare", "Sanitation", "Waste Management", "Health Campaigns"],
+                            data: [
+                                { id: "H1", name: "Primary Healthcare Delivery", status: "Active", target: "100% coverage", achievement: "95% coverage", officer: "Dr. Amadou Jallow", contact: "3456797", notes: "Remote villages need mobile clinics" },
+                                { id: "H2", name: "Waste Management", status: "Active", target: "Weekly collection", achievement: "Bi-weekly", officer: "Ebrima Fatty", contact: "3456798", notes: "Need additional waste trucks" }
+                            ]
+                        },
+                        {
+                            id: "1-5",
+                            name: "Agriculture & Natural Resources",
+                            workCategories: ["Forest Management", "Agriculture Extension", "Pasture Management", "Resource Conservation"],
+                            data: [
+                                { id: "A1", name: "Community Forest Management", status: "Active", target: "5 forests", achievement: "4 forests", officer: "Lamin Dibba", contact: "3456799", notes: "One forest affected by illegal logging" },
+                                { id: "A2", name: "Agricultural Extension Services", status: "Active", target: "500 farmers", achievement: "480 farmers", officer: "Fatou Colley", contact: "3456800", notes: "Training on new techniques ongoing" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: "Regional Security Committee (RECSEC)",
+                    subDepartments: [
+                        {
+                            id: "2-1",
+                            name: "Police Divisions",
+                            workCategories: ["Crime Prevention", "Investigation", "Public Order", "Community Policing"],
+                            data: [
+                                { id: "PD1", name: "Crime Prevention", status: "Active", target: "Reduce by 15%", achievement: "Reduced by 10%", officer: "Commissioner Lamin Sanyang", contact: "3456801", notes: "Increased patrols in high-crime areas" },
+                                { id: "PD2", name: "Case Investigation", status: "Active", target: "85% closure rate", achievement: "80% closure rate", officer: "ASP Fatoumatta Jallow", contact: "3456802", notes: "Complex cases taking longer" }
+                            ]
+                        },
+                        {
+                            id: "2-2",
+                            name: "Traffic Unit",
+                            workCategories: ["Road Safety", "Vehicle Checks", "Accident Response", "Traffic Control"],
+                            data: [
+                                { id: "TU1", name: "Road Safety Operations", status: "Active", target: "Daily patrols", achievement: "5 days/week", officer: "Inspector Modou Njie", contact: "3456803", notes: "Need additional traffic officers" },
+                                { id: "TU2", name: "Vehicle Compliance Checks", status: "Active", target: "200 vehicles/month", achievement: "180 vehicles", officer: "Sgt. Ousman Ceesay", contact: "3456804", notes: "Most vehicles compliant" }
+                            ]
+                        },
+                        {
+                            id: "2-3",
+                            name: "Fire Stations",
+                            workCategories: ["Emergency Response", "Fire Prevention", "Safety Inspections", "Public Education"],
+                            data: [
+                                { id: "FS1", name: "Emergency Response Time", status: "Active", target: "Under 10 mins", achievement: "12 mins avg", officer: "Chief Fire Officer Lamin Touray", contact: "3456805", notes: "Distance to remote areas is challenge" },
+                                { id: "FS2", name: "Fire Prevention Campaigns", status: "Active", target: "4 campaigns", achievement: "3 campaigns", officer: "Fire Officer Mariama Sarr", contact: "3456806", notes: "One campaign postponed to next month" }
+                            ]
+                        },
+                        {
+                            id: "2-4",
+                            name: "Border Posts",
+                            workCategories: ["Border Control", "Immigration Processing", "Customs Inspection", "Cross-border Security"],
+                            data: [
+                                { id: "BP1", name: "Border Control Operations", status: "Active", target: "24/7 coverage", achievement: "20/7 coverage", officer: "Immigration Officer Ebrima Jallow", contact: "3456807", notes: "Staffing shortages on night shifts" },
+                                { id: "BP2", name: "Customs Inspection", status: "Active", target: "100% inspection", achievement: "95% inspection", officer: "Customs Officer Fatou Bah", contact: "3456808", notes: "High volume during market days" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 3,
+                    name: "Central Government Ministry Heads",
+                    subDepartments: [
+                        {
+                            id: "3-1",
+                            name: "Regional Health Directorate",
+                            workCategories: ["Healthcare Delivery", "Disease Surveillance", "Immunization", "Health Facilities"],
+                            data: [
+                                { id: "RH1", name: "Hospital Services", status: "Active", target: "95% bed occupancy", achievement: "92% occupancy", officer: "Dr. Amadou Sowe", contact: "3456809", notes: "Need additional specialist doctors" },
+                                { id: "RH2", name: "Immunization Coverage", status: "Active", target: "90% coverage", achievement: "87% coverage", officer: "Nurse Isatou Jallow", contact: "3456810", notes: "Remote areas have lower coverage" }
+                            ]
+                        },
+                        {
+                            id: "3-2",
+                            name: "Regional Education Directorate",
+                            workCategories: ["School Management", "Teacher Training", "Examinations", "Curriculum Implementation"],
+                            data: [
+                                { id: "RE1", name: "School Performance", status: "Active", target: "75% pass rate", achievement: "72% pass rate", officer: "Education Director Lamin Saidy", contact: "3456811", notes: "Mathematics results below target" },
+                                { id: "RE2", name: "Teacher Deployment", status: "Active", target: "100% schools staffed", achievement: "95% schools", officer: "Assistant Director Fatoumatta Ceesay", contact: "3456812", notes: "Remote schools have teacher shortages" }
+                            ]
+                        },
+                        {
+                            id: "3-3",
+                            name: "Regional Agricultural Directorate",
+                            workCategories: ["Extension Services", "Input Distribution", "Livestock Health", "Farmer Training"],
+                            data: [
+                                { id: "RA1", name: "Seed Distribution", status: "Active", target: "10,000 farmers", achievement: "9,500 farmers", officer: "Agricultural Director Modou Jeng", contact: "3456813", notes: "Distribution completed on schedule" },
+                                { id: "RA2", name: "Livestock Vaccination", status: "Active", target: "50,000 animals", achievement: "48,000 animals", officer: "Veterinary Officer Dr. Ousman Sarr", contact: "3456814", notes: "Campaign ongoing in remote areas" }
+                            ]
+                        },
+                        {
+                            id: "3-4",
+                            name: "Regional Forestry Directorate",
+                            workCategories: ["Forest Conservation", "Anti-deforestation", "Community Forestry", "Climate Projects"],
+                            data: [
+                                { id: "RF1", name: "Forest Conservation", status: "Active", target: "5,000 hectares", achievement: "4,800 hectares", officer: "Forestry Director Lamin Fofana", contact: "3456815", notes: "Illegal logging remains a challenge" },
+                                { id: "RF2", name: "Tree Planting Campaign", status: "Active", target: "100,000 trees", achievement: "85,000 trees", officer: "Conservation Officer Mariama Jammeh", contact: "3456816", notes: "Community participation high" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 4,
+                    name: "Traditional Authority Structure",
+                    isTraditional: true,
+                    subDepartments: []
+                },
+                {
+                    id: 5,
+                    name: "Elected National Representatives",
+                    subDepartments: [
+                        {
+                            id: "5-1",
+                            name: "National Assembly Members",
+                            workCategories: ["Constituency Development", "Legislative Work", "Oversight Functions", "Public Engagement"],
+                            data: [
+                                { id: "NAM1", name: "Constituency Development Fund", status: "Active", target: "5 projects", achievement: "4 projects", officer: "Hon. Lamin Dibba", contact: "3456817", notes: "One project delayed by procurement" },
+                                { id: "NAM2", name: "Public Consultations", status: "Active", target: "Monthly meetings", achievement: "Bi-monthly", officer: "Hon. Fatou Touray", contact: "3456818", notes: "Increased during parliamentary recess" }
+                            ]
+                        },
+                        {
+                            id: "5-2",
+                            name: "Mayoral Office",
+                            workCategories: ["Municipal Services", "Urban Planning", "Revenue Collection", "Public Works"],
+                            data: [
+                                { id: "MO1", name: "Municipal Services", status: "Active", target: "Improved rating", achievement: "Steady", officer: "Mayor's Office", contact: "3456819", notes: "Focus on waste management improvement" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 6,
+                    name: "Alikalos & Grassroots Structures",
+                    isTraditional: true,
+                    subDepartments: []
+                }
+            ],
+            traditionalData: {
+                districts: [
+                    {
+                        id: "D1",
+                        name: "Kiang West",
+                        chief: {
+                            name: "Seyfo Lamin K. Jammeh",
+                            title: "District Chief",
+                            contact: "3456820",
+                            tenure: "Since 2015",
+                            status: "Active",
+                            notes: "Experienced leader, good community relations"
+                        },
+                        villages: [
+                            { id: "V1-1", name: "Dumbutu", head: "Alikalo Ebrima Sanyang", contact: "3456821", population: "1,200", status: "Active", issues: "Water access problems" },
+                            { id: "V1-2", name: "Massembe", head: "Alikalo Fatoumatta Jallow", contact: "3456822", population: "950", status: "Active", issues: "Need health post" },
+                            { id: "V1-3", name: "Jiffarong", head: "Alikalo Modou L. Bah", contact: "3456823", population: "1,500", status: "Active", issues: "Road maintenance needed" }
+                        ]
+                    },
+                    {
+                        id: "D2",
+                        name: "Kiang Central",
+                        chief: {
+                            name: "Seyfo Ousman J. Ceesay",
+                            title: "District Chief",
+                            contact: "3456824",
+                            tenure: "Since 2018",
+                            status: "Active",
+                            notes: "Youth engagement champion"
+                        },
+                        villages: [
+                            { id: "V2-1", name: "Dumbuto", head: "Alikalo Lamin S. Touray", contact: "3456825", population: "1,100", status: "Active", issues: "Electricity expansion needed" },
+                            { id: "V2-2", name: "Jali", head: "Alikalo Mariama Sowe", contact: "3456826", population: "800", status: "Active", issues: "School facilities need upgrade" }
+                        ]
+                    },
+                    {
+                        id: "D3",
+                        name: "Kiang East",
+                        chief: {
+                            name: "Seyfo Amadou S. Njie",
+                            title: "District Chief",
+                            contact: "3456827",
+                            tenure: "Since 2020",
+                            status: "Active",
+                            notes: "Focus on agricultural development"
+                        },
+                        villages: [
+                            { id: "V3-1", name: "Kumbija", head: "Alikalo Fatou Colley", contact: "3456828", population: "1,800", status: "Active", issues: "Market facility needed" },
+                            { id: "V3-2", name: "Darsilami", head: "Alikalo Ebrima Jallow", contact: "3456829", population: "1,300", status: "Active", issues: "Flooding during rainy season" }
+                        ]
+                    },
+                    {
+                        id: "D4",
+                        name: "Jarra West",
+                        chief: {
+                            name: "Seyfo Lamin B. Sanyang",
+                            title: "District Chief",
+                            contact: "3456830",
+                            tenure: "Since 2016",
+                            status: "Active",
+                            notes: "Strong on conflict resolution"
+                        },
+                        villages: [
+                            { id: "V4-1", name: "Soma", head: "Alikalo Ousman Bah", contact: "3456831", population: "2,500", status: "Active", issues: "Traffic congestion in market area" },
+                            { id: "V4-2", name: "Sutukung", head: "Alikalo Fatoumatta Ceesay", contact: "3456832", population: "1,100", status: "Active", issues: "Need additional boreholes" }
+                        ]
+                    },
+                    {
+                        id: "D5",
+                        name: "Jarra Central",
+                        chief: {
+                            name: "Seyfo Modou L. Jallow",
+                            title: "District Chief",
+                            contact: "3456833",
+                            tenure: "Since 2019",
+                            status: "Active",
+                            notes: "Promotes women's empowerment"
+                        },
+                        villages: [
+                            { id: "V5-1", name: "Bureng", head: "Alikalo Lamin K. Jammeh", contact: "3456834", population: "1,400", status: "Active", issues: "Agricultural extension services needed" },
+                            { id: "V5-2", name: "Karantaba", head: "Alikalo Mariama Jallow", contact: "3456835", population: "900", status: "Active", issues: "Mobile network coverage poor" }
+                        ]
+                    },
+                    {
+                        id: "D6",
+                        name: "Jarra East",
+                        chief: {
+                            name: "Seyfo Amadou B. Touray",
+                            title: "District Chief",
+                            contact: "3456836",
+                            tenure: "Since 2017",
+                            status: "Active",
+                            notes: "Environmental conservation advocate"
+                        },
+                        villages: [
+                            { id: "V6-1", name: "Pakalinding", head: "Alikalo Ebrima Sarr", contact: "3456837", population: "1,700", status: "Active", issues: "Road needs grading" },
+                            { id: "V6-2", name: "Sankandi", head: "Alikalo Fatou Njie", contact: "3456838", population: "1,200", status: "Active", issues: "Youth unemployment high" }
+                        ]
+                    }
+                ]
+            }
+        };
 
-    // Entire previous code for districts, villages, agriculture, health, education, infrastructure, security, disasters, finance, staff, ngos, reports, maps, downloads, CSVs, JSON editor, and navigation
-    // Keep everything exactly as previously provided (including chief & alkalo fields)
-    // For brevity, it is assumed here to be appended inline exactly as one complete script
+        // DOM Elements
+        const stakeholderFilter = document.getElementById('stakeholderFilter');
+        const subDeptFilter = document.getElementById('subDeptFilter');
+        const workCategoryFilter = document.getElementById('workCategoryFilter');
+        const actionFilter = document.getElementById('actionFilter');
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const viewStatsBtn = document.getElementById('viewStatsBtn');
+        const mainDataDisplay = document.getElementById('mainDataDisplay');
+        const traditionalSection = document.getElementById('traditionalSection');
+        const tableContainer = document.getElementById('tableContainer');
+        const districtsContainer = document.getElementById('districtsContainer');
+        const dataCount = document.getElementById('dataCount');
+        const adminBtn = document.getElementById('adminBtn');
+        const loginModal = document.getElementById('loginModal');
+        const loginBtn = document.getElementById('loginBtn');
+        const cancelLoginBtn = document.getElementById('cancelLoginBtn');
+        const passwordInput = document.getElementById('password');
+        const passwordError = document.getElementById('passwordError');
+        const downloadTraditionalBtn = document.getElementById('downloadTraditionalBtn');
+        const lastUpdated = document.getElementById('lastUpdated');
 
-  </script></body>
+        // Current filter state
+        let currentFilters = {
+            stakeholder: 'all',
+            subDepartment: 'all',
+            workCategory: 'all'
+        };
+
+        // Initialize the application
+        function init() {
+            // Set last updated date
+            lastUpdated.textContent = new Date().toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            // Populate stakeholder filter
+            populateStakeholderFilter();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Load initial data
+            applyFilters();
+            
+            // Generate traditional authority display
+            generateTraditionalDisplay();
+        }
+
+        // Populate stakeholder filter
+        function populateStakeholderFilter() {
+            // Already populated in HTML
+            // Set up change event for stakeholder filter
+            stakeholderFilter.addEventListener('change', function() {
+                currentFilters.stakeholder = this.value;
+                populateSubDepartmentFilter();
+                
+                // Show/hide traditional section
+                if (this.value === '4' || this.value === '6') {
+                    mainDataDisplay.style.display = 'none';
+                    traditionalSection.style.display = 'block';
+                } else {
+                    mainDataDisplay.style.display = 'block';
+                    traditionalSection.style.display = 'none';
+                }
+            });
+        }
+
+        // Populate sub-department filter based on selected stakeholder
+        function populateSubDepartmentFilter() {
+            // Clear existing options
+            subDeptFilter.innerHTML = '<option value="all">All Sub-Departments</option>';
+            
+            if (currentFilters.stakeholder === 'all') {
+                // Add all sub-departments from all stakeholders
+                const allSubDepts = [];
+                regionData.stakeholders.forEach(stakeholder => {
+                    stakeholder.subDepartments.forEach(subDept => {
+                        allSubDepts.push({
+                            id: subDept.id,
+                            name: subDept.name,
+                            stakeholderId: stakeholder.id
+                        });
+                    });
+                });
+                
+                // Sort and add to filter
+                allSubDepts.sort((a, b) => a.name.localeCompare(b.name));
+                allSubDepts.forEach(subDept => {
+                    const option = document.createElement('option');
+                    option.value = subDept.id;
+                    option.textContent = `${subDept.name} (Stakeholder ${subDept.stakeholderId})`;
+                    subDeptFilter.appendChild(option);
+                });
+            } else {
+                // Add sub-departments for selected stakeholder
+                const stakeholder = regionData.stakeholders.find(s => s.id == currentFilters.stakeholder);
+                if (stakeholder && stakeholder.subDepartments) {
+                    stakeholder.subDepartments.forEach(subDept => {
+                        const option = document.createElement('option');
+                        option.value = subDept.id;
+                        option.textContent = subDept.name;
+                        subDeptFilter.appendChild(option);
+                    });
+                }
+            }
+            
+            // Reset work category filter
+            workCategoryFilter.innerHTML = '<option value="all">All Work Categories</option>';
+            currentFilters.subDepartment = 'all';
+            currentFilters.workCategory = 'all';
+            
+            // Set up change event for sub-department filter
+            subDeptFilter.addEventListener('change', function() {
+                currentFilters.subDepartment = this.value;
+                populateWorkCategoryFilter();
+            });
+        }
+
+        // Populate work category filter based on selected sub-department
+        function populateWorkCategoryFilter() {
+            // Clear existing options
+            workCategoryFilter.innerHTML = '<option value="all">All Work Categories</option>';
+            
+            if (currentFilters.subDepartment === 'all') {
+                // Get all work categories from all sub-departments of selected stakeholder
+                const allWorkCategories = new Set();
+                
+                if (currentFilters.stakeholder === 'all') {
+                    regionData.stakeholders.forEach(stakeholder => {
+                        stakeholder.subDepartments.forEach(subDept => {
+                            subDept.workCategories.forEach(category => {
+                                allWorkCategories.add(category);
+                            });
+                        });
+                    });
+                } else {
+                    const stakeholder = regionData.stakeholders.find(s => s.id == currentFilters.stakeholder);
+                    if (stakeholder && stakeholder.subDepartments) {
+                        stakeholder.subDepartments.forEach(subDept => {
+                            subDept.workCategories.forEach(category => {
+                                allWorkCategories.add(category);
+                            });
+                        });
+                    }
+                }
+                
+                // Add to filter
+                Array.from(allWorkCategories).sort().forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    workCategoryFilter.appendChild(option);
+                });
+            } else {
+                // Get work categories for selected sub-department
+                let workCategories = [];
+                
+                // Find the sub-department
+                for (const stakeholder of regionData.stakeholders) {
+                    if (stakeholder.subDepartments) {
+                        const subDept = stakeholder.subDepartments.find(sd => sd.id === currentFilters.subDepartment);
+                        if (subDept) {
+                            workCategories = subDept.workCategories;
+                            break;
+                        }
+                    }
+                }
+                
+                // Add to filter
+                workCategories.sort().forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    workCategoryFilter.appendChild(option);
+                });
+            }
+            
+            currentFilters.workCategory = 'all';
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Apply filters button
+            applyFiltersBtn.addEventListener('click', applyFilters);
+            
+            // Reset filters button
+            resetFiltersBtn.addEventListener('click', resetFilters);
+            
+            // Download all data button
+            downloadAllBtn.addEventListener('click', downloadAllData);
+            
+            // View statistics button
+            viewStatsBtn.addEventListener('click', viewStatistics);
+            
+            // Work category filter change
+            workCategoryFilter.addEventListener('change', function() {
+                currentFilters.workCategory = this.value;
+            });
+            
+            // Action filter change
+            actionFilter.addEventListener('change', function() {
+                if (this.value === 'download') {
+                    downloadFilteredData();
+                    // Reset to view option
+                    setTimeout(() => {
+                        actionFilter.value = 'view';
+                    }, 100);
+                }
+            });
+            
+            // Admin button
+            adminBtn.addEventListener('click', () => {
+                loginModal.style.display = 'flex';
+            });
+            
+            // Login button
+            loginBtn.addEventListener('click', () => {
+                if (passwordInput.value === 'gambia@2025') {
+                    // Correct password
+                    loginModal.style.display = 'none';
+                    passwordInput.value = '';
+                    passwordError.style.display = 'none';
+                    alert('Administrative access granted. You can now edit data.');
+                    enableEditing();
+                } else {
+                    // Incorrect password
+                    passwordError.style.display = 'block';
+                }
+            });
+            
+            // Cancel login button
+            cancelLoginBtn.addEventListener('click', () => {
+                loginModal.style.display = 'none';
+                passwordInput.value = '';
+                passwordError.style.display = 'none';
+            });
+            
+            // Download traditional data button
+            downloadTraditionalBtn.addEventListener('click', downloadTraditionalData);
+        }
+
+        // Apply filters and update display
+        function applyFilters() {
+            // Get filtered data
+            const filteredData = getFilteredData();
+            
+            // Update table display
+            updateTableDisplay(filteredData);
+            
+            // Update data count
+            dataCount.textContent = filteredData.length;
+        }
+
+        // Get filtered data based on current filters
+        function getFilteredData() {
+            let filteredData = [];
+            
+            // Determine which stakeholders to include
+            let stakeholdersToInclude = [];
+            if (currentFilters.stakeholder === 'all') {
+                stakeholdersToInclude = regionData.stakeholders.filter(s => !s.isTraditional);
+            } else {
+                const stakeholder = regionData.stakeholders.find(s => s.id == currentFilters.stakeholder);
+                if (stakeholder && !stakeholder.isTraditional) {
+                    stakeholdersToInclude = [stakeholder];
+                }
+            }
+            
+            // Collect data from included stakeholders
+            stakeholdersToInclude.forEach(stakeholder => {
+                stakeholder.subDepartments.forEach(subDept => {
+                    // Check if sub-department matches filter
+                    if (currentFilters.subDepartment === 'all' || subDept.id === currentFilters.subDepartment) {
+                        // Check if work category matches filter
+                        subDept.data.forEach(item => {
+                            // For simplicity, we'll assume each item belongs to one work category
+                            // In a real app, you would have a workCategory field in each data item
+                            if (currentFilters.workCategory === 'all' || 
+                                (item.workCategory && item.workCategory === currentFilters.workCategory)) {
+                                filteredData.push({
+                                    ...item,
+                                    stakeholder: stakeholder.name,
+                                    subDepartment: subDept.name
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            return filteredData;
+        }
+
+        // Update table display with filtered data
+        function updateTableDisplay(data) {
+            if (data.length === 0) {
+                tableContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-database" style="font-size: 3rem; margin-bottom: 20px; color: var(--silver);"></i>
+                        <h3>No Data Found</h3>
+                        <p>Try adjusting your filters to see more results.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Create table
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Activity Name</th>
+                            <th>Status</th>
+                            <th>Target</th>
+                            <th>Achievement</th>
+                            <th>Responsible Officer</th>
+                            <th>Contact</th>
+                            <th>Stakeholder</th>
+                            <th>Sub-Department</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            data.forEach(item => {
+                // Determine status indicator
+                let statusIndicator = '';
+                if (item.status === 'Active') {
+                    statusIndicator = '<span class="status-indicator status-active"></span>';
+                } else if (item.status === 'Pending') {
+                    statusIndicator = '<span class="status-indicator status-pending"></span>';
+                } else {
+                    statusIndicator = '<span class="status-indicator status-inactive"></span>';
+                }
+                
+                tableHTML += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td><strong>${item.name}</strong></td>
+                        <td>${statusIndicator} ${item.status}</td>
+                        <td>${item.target}</td>
+                        <td>${item.achievement}</td>
+                        <td>${item.officer}</td>
+                        <td>${item.contact}</td>
+                        <td>${item.stakeholder}</td>
+                        <td>${item.subDepartment}</td>
+                        <td>${item.notes}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            tableContainer.innerHTML = tableHTML;
+        }
+
+        // Generate traditional authority display
+        function generateTraditionalDisplay() {
+            let districtsHTML = '';
+            
+            regionData.traditionalData.districts.forEach(district => {
+                // Create village options for dropdown
+                let villageOptions = '';
+                district.villages.forEach(village => {
+                    villageOptions += `<option value="${village.id}">${village.name} - ${village.head}</option>`;
+                });
+                
+                districtsHTML += `
+                    <div class="district-card">
+                        <div class="district-header">
+                            <div class="district-name">${district.name} District</div>
+                            <button class="btn btn-primary download-chief-btn" data-district-id="${district.id}">
+                                <i class="fas fa-download"></i> Download Chief Data
+                            </button>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <h4 style="color: var(--dark-blue); margin-bottom: 5px;">District Chief Details</h4>
+                            <p><strong>Name:</strong> ${district.chief.name}</p>
+                            <p><strong>Title:</strong> ${district.chief.title}</p>
+                            <p><strong>Contact:</strong> ${district.chief.contact}</p>
+                            <p><strong>Tenure:</strong> ${district.chief.tenure}</p>
+                            <p><strong>Status:</strong> <span class="status-indicator status-active"></span> ${district.chief.status}</p>
+                            <p><strong>Notes:</strong> ${district.chief.notes}</p>
+                        </div>
+                        
+                        <div class="village-selector">
+                            <h4 style="color: var(--dark-blue); margin-bottom: 10px;">Village Heads in ${district.name}</h4>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select class="village-select" data-district-id="${district.id}" style="flex-grow: 1; padding: 10px;">
+                                    <option value="">Select a village</option>
+                                    ${villageOptions}
+                                </select>
+                                <button class="btn btn-secondary download-village-btn" data-district-id="${district.id}" disabled>
+                                    <i class="fas fa-download"></i> Download Village Data
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <h4 style="color: var(--dark-blue); margin-bottom: 5px;">Village Summary</h4>
+                            <p><strong>Number of Villages:</strong> ${district.villages.length}</p>
+                            <p><strong>Total Population (approx):</strong> ${district.villages.reduce((sum, village) => sum + parseInt(village.population.replace(',', '')), 0).toLocaleString()}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            districtsContainer.innerHTML = districtsHTML;
+            
+            // Add event listeners for download buttons in traditional section
+            document.querySelectorAll('.download-chief-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const districtId = this.getAttribute('data-district-id');
+                    downloadDistrictChiefData(districtId);
+                });
+            });
+            
+            document.querySelectorAll('.village-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    const districtId = this.getAttribute('data-district-id');
+                    const downloadBtn = document.querySelector(`.download-village-btn[data-district-id="${districtId}"]`);
+                    downloadBtn.disabled = !this.value;
+                });
+            });
+            
+            document.querySelectorAll('.download-village-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const districtId = this.getAttribute('data-district-id');
+                    const villageSelect = document.querySelector(`.village-select[data-district-id="${districtId}"]`);
+                    const villageId = villageSelect.value;
+                    
+                    if (villageId) {
+                        downloadVillageData(villageId);
+                    }
+                });
+            });
+        }
+
+        // Reset all filters
+        function resetFilters() {
+            stakeholderFilter.value = 'all';
+            subDeptFilter.innerHTML = '<option value="all">All Sub-Departments</option>';
+            workCategoryFilter.innerHTML = '<option value="all">All Work Categories</option>';
+            actionFilter.value = 'view';
+            
+            currentFilters = {
+                stakeholder: 'all',
+                subDepartment: 'all',
+                workCategory: 'all'
+            };
+            
+            // Show main data display, hide traditional
+            mainDataDisplay.style.display = 'block';
+            traditionalSection.style.display = 'none';
+            
+            // Apply reset filters
+            applyFilters();
+        }
+
+        // Download all data as CSV
+        function downloadAllData() {
+            // Collect all data
+            let allData = [];
+            
+            regionData.stakeholders.forEach(stakeholder => {
+                if (!stakeholder.isTraditional) {
+                    stakeholder.subDepartments.forEach(subDept => {
+                        subDept.data.forEach(item => {
+                            allData.push({
+                                ID: item.id,
+                                Activity: item.name,
+                                Status: item.status,
+                                Target: item.target,
+                                Achievement: item.achievement,
+                                Officer: item.officer,
+                                Contact: item.contact,
+                                Stakeholder: stakeholder.name,
+                                SubDepartment: subDept.name,
+                                Notes: item.notes
+                            });
+                        });
+                    });
+                }
+            });
+            
+            // Convert to CSV
+            const csv = convertToCSV(allData);
+            
+            // Download file
+            downloadCSV(csv, 'Lower_River_Region_All_Data.csv');
+        }
+
+        // Download filtered data as CSV
+        function downloadFilteredData() {
+            const filteredData = getFilteredData();
+            
+            if (filteredData.length === 0) {
+                alert('No data to download with current filters.');
+                return;
+            }
+            
+            // Format data for CSV
+            const csvData = filteredData.map(item => ({
+                ID: item.id,
+                Activity: item.name,
+                Status: item.status,
+                Target: item.target,
+                Achievement: item.achievement,
+                Officer: item.officer,
+                Contact: item.contact,
+                Stakeholder: item.stakeholder,
+                SubDepartment: item.subDepartment,
+                Notes: item.notes
+            }));
+            
+            // Convert to CSV
+            const csv = convertToCSV(csvData);
+            
+            // Generate filename based on filters
+            let filename = 'Lower_River_Region_';
+            if (currentFilters.stakeholder !== 'all') {
+                const stakeholder = regionData.stakeholders.find(s => s.id == currentFilters.stakeholder);
+                filename += stakeholder.name.replace(/[^a-zA-Z0-9]/g, '_') + '_';
+            }
+            if (currentFilters.subDepartment !== 'all') {
+                filename += 'Filtered_';
+            }
+            filename += 'Data.csv';
+            
+            // Download file
+            downloadCSV(csv, filename);
+        }
+
+        // View statistics
+        function viewStatistics() {
+            const filteredData = getFilteredData();
+            
+            if (filteredData.length === 0) {
+                alert('No data to display statistics for with current filters.');
+                return;
+            }
+            
+            // Calculate some basic statistics
+            const totalItems = filteredData.length;
+            const activeItems = filteredData.filter(item => item.status === 'Active').length;
+            const pendingItems = filteredData.filter(item => item.status === 'Pending').length;
+            const inactiveItems = filteredData.filter(item => item.status === 'Inactive').length;
+            
+            // Calculate average achievement (assuming achievement is a percentage string)
+            let totalAchievement = 0;
+            let itemsWithAchievement = 0;
+            
+            filteredData.forEach(item => {
+                // Extract numeric value from achievement string
+                const match = item.achievement.match(/(\d+)%/);
+                if (match) {
+                    totalAchievement += parseInt(match[1]);
+                    itemsWithAchievement++;
+                }
+            });
+            
+            const avgAchievement = itemsWithAchievement > 0 ? (totalAchievement / itemsWithAchievement).toFixed(1) : 'N/A';
+            
+            // Create statistics display
+            const statsHTML = `
+                <div style="background: linear-gradient(135deg, var(--diamond) 0%, var(--light-blue) 100%); padding: 25px; border-radius: 10px; margin-top: 20px;">
+                    <h3 style="color: var(--dark-blue); margin-bottom: 20px; border-bottom: 2px solid var(--gold); padding-bottom: 10px;">Regional Statistics Summary</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: var(--shadow);">
+                            <div style="font-size: 2.5rem; color: var(--dark-blue); font-weight: bold;">${totalItems}</div>
+                            <div style="color: #666;">Total Activities</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: var(--shadow);">
+                            <div style="font-size: 2.5rem; color: var(--green); font-weight: bold;">${activeItems}</div>
+                            <div style="color: #666;">Active Activities</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: var(--shadow);">
+                            <div style="font-size: 2.5rem; color: #FFA500; font-weight: bold;">${pendingItems}</div>
+                            <div style="color: #666;">Pending Activities</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: var(--shadow);">
+                            <div style="font-size: 2.5rem; color: ${avgAchievement === 'N/A' ? '#666' : avgAchievement >= 80 ? 'var(--green)' : avgAchievement >= 60 ? '#FFA500' : '#FF0000'}; font-weight: bold;">${avgAchievement}${avgAchievement !== 'N/A' ? '%' : ''}</div>
+                            <div style="color: #666;">Average Achievement</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border-left: 4px solid var(--gold);">
+                        <h4 style="color: var(--dark-blue); margin-bottom: 10px;">Filter Summary</h4>
+                        <p><strong>Stakeholder:</strong> ${currentFilters.stakeholder === 'all' ? 'All' : regionData.stakeholders.find(s => s.id == currentFilters.stakeholder).name}</p>
+                        <p><strong>Sub-Department:</strong> ${currentFilters.subDepartment === 'all' ? 'All' : 'Selected'}</p>
+                        <p><strong>Work Category:</strong> ${currentFilters.workCategory === 'all' ? 'All' : currentFilters.workCategory}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Insert statistics after the table
+            const existingStats = document.getElementById('statsDisplay');
+            if (existingStats) {
+                existingStats.innerHTML = statsHTML;
+            } else {
+                const statsDiv = document.createElement('div');
+                statsDiv.id = 'statsDisplay';
+                statsDiv.innerHTML = statsHTML;
+                tableContainer.appendChild(statsDiv);
+            }
+        }
+
+        // Download traditional data
+        function downloadTraditionalData() {
+            // Prepare data for CSV
+            let traditionalCSVData = [];
+            
+            regionData.traditionalData.districts.forEach(district => {
+                // Add district chief data
+                traditionalCSVData.push({
+                    Type: 'District Chief',
+                    District: district.name,
+                    Name: district.chief.name,
+                    Title: district.chief.title,
+                    Contact: district.chief.contact,
+                    Tenure: district.chief.tenure,
+                    Status: district.chief.status,
+                    Notes: district.chief.notes
+                });
+                
+                // Add village data
+                district.villages.forEach(village => {
+                    traditionalCSVData.push({
+                        Type: 'Village Head',
+                        District: district.name,
+                        Village: village.name,
+                        Name: village.head,
+                        Contact: village.contact,
+                        Population: village.population,
+                        Status: village.status,
+                        Issues: village.issues
+                    });
+                });
+            });
+            
+            // Convert to CSV and download
+            const csv = convertToCSV(traditionalCSVData);
+            downloadCSV(csv, 'Lower_River_Region_Traditional_Authority_Data.csv');
+        }
+
+        // Download district chief data
+        function downloadDistrictChiefData(districtId) {
+            const district = regionData.traditionalData.districts.find(d => d.id === districtId);
+            
+            if (!district) return;
+            
+            const csvData = [{
+                Type: 'District Chief',
+                District: district.name,
+                Name: district.chief.name,
+                Title: district.chief.title,
+                Contact: district.chief.contact,
+                Tenure: district.chief.tenure,
+                Status: district.chief.status,
+                Notes: district.chief.notes
+            }];
+            
+            const csv = convertToCSV(csvData);
+            downloadCSV(csv, `${district.name.replace(/ /g, '_')}_Chief_Data.csv`);
+        }
+
+        // Download village data
+        function downloadVillageData(villageId) {
+            // Find the village
+            let targetVillage = null;
+            let districtName = '';
+            
+            for (const district of regionData.traditionalData.districts) {
+                const village = district.villages.find(v => v.id === villageId);
+                if (village) {
+                    targetVillage = village;
+                    districtName = district.name;
+                    break;
+                }
+            }
+            
+            if (!targetVillage) return;
+            
+            const csvData = [{
+                Type: 'Village Head',
+                District: districtName,
+                Village: targetVillage.name,
+                Name: targetVillage.head,
+                Contact: targetVillage.contact,
+                Population: targetVillage.population,
+                Status: targetVillage.status,
+                Issues: targetVillage.issues
+            }];
+            
+            const csv = convertToCSV(csvData);
+            downloadCSV(csv, `${districtName.replace(/ /g, '_')}_${targetVillage.name.replace(/ /g, '_')}_Data.csv`);
+        }
+
+        // Convert array of objects to CSV
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            
+            const headers = Object.keys(data[0]);
+            const csvRows = [];
+            
+            // Add header row
+            csvRows.push(headers.join(','));
+            
+            // Add data rows
+            for (const row of data) {
+                const values = headers.map(header => {
+                    const value = row[header];
+                    // Escape quotes and wrap in quotes if contains comma or quote
+                    const escaped = String(value).replace(/"/g, '""');
+                    return escaped.includes(',') || escaped.includes('"') ? `"${escaped}"` : escaped;
+                });
+                csvRows.push(values.join(','));
+            }
+            
+            return csvRows.join('\n');
+        }
+
+        // Download CSV file
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Enable editing mode (after admin login)
+        function enableEditing() {
+            // Add edit buttons to table rows
+            const tableRows = document.querySelectorAll('#tableContainer tbody tr');
+            tableRows.forEach(row => {
+                const editCell = document.createElement('td');
+                editCell.innerHTML = '<button class="btn" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-edit"></i> Edit</button>';
+                row.appendChild(editCell);
+                
+                // Add edit functionality
+                const editBtn = editCell.querySelector('button');
+                editBtn.addEventListener('click', function() {
+                    enableRowEditing(row);
+                });
+            });
+            
+            // Add edit buttons to traditional section
+            document.querySelectorAll('.district-card').forEach(card => {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn btn-secondary';
+                editBtn.style.marginTop = '10px';
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit District Data';
+                editBtn.addEventListener('click', function() {
+                    alert('District editing functionality would be implemented here.');
+                });
+                
+                card.appendChild(editBtn);
+            });
+            
+            // Change admin button to show edit mode
+            adminBtn.innerHTML = '<i class="fas fa-user-edit"></i> Edit Mode';
+            adminBtn.style.background = 'var(--gold)';
+            adminBtn.style.color = 'var(--dark-blue)';
+        }
+
+        // Enable editing for a specific table row
+        function enableRowEditing(row) {
+            const cells = row.querySelectorAll('td');
+            
+            // Skip the last cell (edit button cell)
+            for (let i = 0; i < cells.length - 1; i++) {
+                const cell = cells[i];
+                const originalContent = cell.textContent;
+                
+                // Create input field
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = originalContent.trim();
+                input.style.width = '100%';
+                input.style.padding = '5px';
+                input.style.border = '1px solid var(--gold)';
+                
+                // Replace cell content with input
+                cell.innerHTML = '';
+                cell.appendChild(input);
+            }
+            
+            // Change edit button to save button
+            const actionCell = cells[cells.length - 1];
+            const button = actionCell.querySelector('button');
+            button.innerHTML = '<i class="fas fa-save"></i> Save';
+            button.style.background = 'var(--green)';
+            button.style.color = 'white';
+            
+            // Change button action to save
+            button.onclick = function() {
+                saveRowEdits(row);
+            };
+        }
+
+        // Save edits for a table row
+        function saveRowEdits(row) {
+            const cells = row.querySelectorAll('td');
+            const updatedData = [];
+            
+            // Collect updated values
+            for (let i = 0; i < cells.length - 1; i++) {
+                const cell = cells[i];
+                const input = cell.querySelector('input');
+                updatedData.push(input.value);
+                
+                // Restore cell content
+                cell.textContent = input.value;
+            }
+            
+            // Change save button back to edit button
+            const actionCell = cells[cells.length - 1];
+            const button = actionCell.querySelector('button');
+            button.innerHTML = '<i class="fas fa-edit"></i> Edit';
+            button.style.background = '';
+            button.style.color = '';
+            
+            // Restore edit functionality
+            button.onclick = function() {
+                enableRowEditing(row);
+            };
+            
+            // In a real application, you would save the updated data to your data structure
+            console.log('Updated row data:', updatedData);
+            alert('Changes saved locally. In a real application, this would update the database.');
+        }
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
 </html>
