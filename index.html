@@ -369,7 +369,7 @@
         
         /* Login Modal */
         .modal {
-            display: none;
+            display: flex;
             position: fixed;
             top: 0;
             left: 0;
@@ -499,146 +499,175 @@
                 width: 100%;
             }
         }
+        
+        /* Main content hidden until login */
+        #mainContent {
+            display: none;
+        }
+        
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 15px;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
     </style>
 </head>
 <body>
-    <!-- Login Modal -->
+    <!-- Login Modal - Now always visible until login -->
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <i class="fas fa-lock" style="font-size: 2.5rem; color: var(--gold); margin-bottom: 15px;"></i>
-                <h3>Administrative Access</h3>
-                <p>Enter password to edit dashboard data</p>
+                <i class="fas fa-landmark" style="font-size: 2.5rem; color: var(--gold); margin-bottom: 15px;"></i>
+                <h3>Governor's Dashboard Access</h3>
+                <p>Lower River Region Management System</p>
             </div>
             <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter administrative password">
+                <label for="password">Enter Password</label>
+                <input type="password" id="password" placeholder="Enter dashboard access password">
                 <div id="passwordError" style="color: #FF0000; margin-top: 10px; display: none;">Incorrect password. Please try again.</div>
             </div>
             <div class="modal-actions">
                 <button id="loginBtn" class="btn btn-primary">Login</button>
-                <button id="cancelLoginBtn" class="btn btn-secondary">Cancel</button>
+                <button id="cancelLoginBtn" class="btn btn-secondary" style="display: none;">Cancel</button>
+            </div>
+            <div style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: #666;">
+                <p>Contact system administrator for access credentials</p>
             </div>
         </div>
     </div>
 
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-landmark"></i>
-                    <div class="logo-text">
-                        <h1>Governor's Regional Management Dashboard</h1>
-                        <h2>Lower River Region, The Gambia</h2>
+    <!-- Main Content - Hidden until login -->
+    <div id="mainContent">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-landmark"></i>
+                        <div class="logo-text">
+                            <h1>Governor's Regional Management Dashboard</h1>
+                            <h2>Lower River Region, The Gambia</h2>
+                        </div>
+                    </div>
+                    <div class="governor-info">
+                        <h3>HON. SEEDY LAMIN BAH</h3>
+                        <p>Governor, Lower River Region</p>
+                    </div>
+                    <div class="admin-access">
+                        <button id="adminBtn" class="admin-btn">
+                            <i class="fas fa-user-shield"></i> Admin
+                        </button>
+                        <button id="logoutBtn" class="logout-btn" style="display: none;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
                     </div>
                 </div>
-                <div class="governor-info">
-                    <h3>HON. SEEDY LAMIN BAH</h3>
-                    <p>Governor, Lower River Region</p>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Control Panel -->
+            <section class="control-panel">
+                <div class="panel-title">
+                    <i class="fas fa-filter"></i>
+                    <h2>Data Filtering & Analysis Panel</h2>
                 </div>
-                <div class="admin-access">
-                    <button id="adminBtn" class="admin-btn">
-                        <i class="fas fa-user-shield"></i> Admin
+                
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="stakeholderFilter"><i class="fas fa-users"></i> Key Stakeholders</label>
+                        <select id="stakeholderFilter">
+                            <option value="all">All Stakeholders</option>
+                            <option value="1">1. Regional Council & Local Government</option>
+                            <option value="2">2. Regional Security Committee (RECSEC)</option>
+                            <option value="3">3. Central Government Ministry Heads</option>
+                            <option value="4">4. Traditional Authority Structure</option>
+                            <option value="5">5. Elected National Representatives</option>
+                            <option value="6">6. Alikalos & Grassroots Structures</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="subDeptFilter"><i class="fas fa-sitemap"></i> Sub-Department</label>
+                        <select id="subDeptFilter">
+                            <option value="all">All Sub-Departments</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="workCategoryFilter"><i class="fas fa-tasks"></i> Work Categories</label>
+                        <select id="workCategoryFilter">
+                            <option value="all">All Work Categories</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="actionFilter"><i class="fas fa-chart-line"></i> Action</label>
+                        <select id="actionFilter">
+                            <option value="view">View Regional Statistics</option>
+                            <option value="download">Download CSV</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="applyFiltersBtn" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <button id="resetFiltersBtn" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i> Reset Filters
+                    </button>
+                    <button id="downloadAllBtn" class="btn btn-diamond">
+                        <i class="fas fa-download"></i> Download All Data (CSV)
+                    </button>
+                    <button id="viewStatsBtn" class="btn btn-diamond">
+                        <i class="fas fa-chart-bar"></i> View Regional Statistics
                     </button>
                 </div>
-            </div>
+            </section>
+
+            <!-- Main Data Display -->
+            <section class="data-display" id="mainDataDisplay">
+                <div class="data-header">
+                    <h3>Regional Data Overview</h3>
+                    <div class="data-count">
+                        <span id="dataCount">0</span> Records Found
+                    </div>
+                </div>
+                <div id="tableContainer">
+                    <!-- Table will be generated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Traditional Authority Display -->
+            <section class="traditional-section" id="traditionalSection">
+                <div class="traditional-header">
+                    <h3>Traditional Authority Structure - Districts & Villages</h3>
+                    <button id="downloadTraditionalBtn" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Download All Traditional Data
+                    </button>
+                </div>
+                <div id="districtsContainer" class="districts-container">
+                    <!-- District cards will be generated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer>
+                <p>Governor's Dashboard &copy; 2025 - Lower River Region, The Gambia</p>
+                <p>Data last updated: <span id="lastUpdated">June 15, 2025</span></p>
+                <p style="margin-top: 10px; font-size: 0.8rem; color: #666;">Administrative Access Password Protected</p>
+            </footer>
         </div>
-    </header>
-
-    <div class="container">
-        <!-- Control Panel -->
-        <section class="control-panel">
-            <div class="panel-title">
-                <i class="fas fa-filter"></i>
-                <h2>Data Filtering & Analysis Panel</h2>
-            </div>
-            
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="stakeholderFilter"><i class="fas fa-users"></i> Key Stakeholders</label>
-                    <select id="stakeholderFilter">
-                        <option value="all">All Stakeholders</option>
-                        <option value="1">1. Regional Council & Local Government</option>
-                        <option value="2">2. Regional Security Committee (RECSEC)</option>
-                        <option value="3">3. Central Government Ministry Heads</option>
-                        <option value="4">4. Traditional Authority Structure</option>
-                        <option value="5">5. Elected National Representatives</option>
-                        <option value="6">6. Alikalos & Grassroots Structures</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="subDeptFilter"><i class="fas fa-sitemap"></i> Sub-Department</label>
-                    <select id="subDeptFilter">
-                        <option value="all">All Sub-Departments</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="workCategoryFilter"><i class="fas fa-tasks"></i> Work Categories</label>
-                    <select id="workCategoryFilter">
-                        <option value="all">All Work Categories</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="actionFilter"><i class="fas fa-chart-line"></i> Action</label>
-                    <select id="actionFilter">
-                        <option value="view">View Regional Statistics</option>
-                        <option value="download">Download CSV</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="action-buttons">
-                <button id="applyFiltersBtn" class="btn btn-primary">
-                    <i class="fas fa-search"></i> Apply Filters
-                </button>
-                <button id="resetFiltersBtn" class="btn btn-secondary">
-                    <i class="fas fa-redo"></i> Reset Filters
-                </button>
-                <button id="downloadAllBtn" class="btn btn-diamond">
-                    <i class="fas fa-download"></i> Download All Data (CSV)
-                </button>
-                <button id="viewStatsBtn" class="btn btn-diamond">
-                    <i class="fas fa-chart-bar"></i> View Regional Statistics
-                </button>
-            </div>
-        </section>
-
-        <!-- Main Data Display -->
-        <section class="data-display" id="mainDataDisplay">
-            <div class="data-header">
-                <h3>Regional Data Overview</h3>
-                <div class="data-count">
-                    <span id="dataCount">0</span> Records Found
-                </div>
-            </div>
-            <div id="tableContainer">
-                <!-- Table will be generated by JavaScript -->
-            </div>
-        </section>
-
-        <!-- Traditional Authority Display -->
-        <section class="traditional-section" id="traditionalSection">
-            <div class="traditional-header">
-                <h3>Traditional Authority Structure - Districts & Villages</h3>
-                <button id="downloadTraditionalBtn" class="btn btn-primary">
-                    <i class="fas fa-download"></i> Download All Traditional Data
-                </button>
-            </div>
-            <div id="districtsContainer" class="districts-container">
-                <!-- District cards will be generated by JavaScript -->
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer>
-            <p>Governor's Dashboard &copy; 2025 - Lower River Region, The Gambia</p>
-            <p>Data last updated: <span id="lastUpdated">June 15, 2025</span></p>
-            <p style="margin-top: 10px; font-size: 0.8rem; color: #666;">Administrative Access Password Protected</p>
-        </footer>
     </div>
 
     <script>
@@ -1136,9 +1165,8 @@
             }
         };
 
-        // THE REMAINDER OF THE JAVASCRIPT CODE REMAINS EXACTLY THE SAME AS BEFORE
-        // DOM Elements, functions, event listeners - all unchanged
-        // Only the data structure above has been expanded
+        // THE REMAINDER OF THE JAVASCRIPT CODE WITH PASSWORD PROTECTION ADJUSTMENT
+        // DOM Elements, functions, event listeners - with login requirement
         
         // DOM Elements
         const stakeholderFilter = document.getElementById('stakeholderFilter');
@@ -1155,6 +1183,7 @@
         const districtsContainer = document.getElementById('districtsContainer');
         const dataCount = document.getElementById('dataCount');
         const adminBtn = document.getElementById('adminBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
         const loginModal = document.getElementById('loginModal');
         const loginBtn = document.getElementById('loginBtn');
         const cancelLoginBtn = document.getElementById('cancelLoginBtn');
@@ -1162,6 +1191,7 @@
         const passwordError = document.getElementById('passwordError');
         const downloadTraditionalBtn = document.getElementById('downloadTraditionalBtn');
         const lastUpdated = document.getElementById('lastUpdated');
+        const mainContent = document.getElementById('mainContent');
 
         // Current filter state
         let currentFilters = {
@@ -1170,8 +1200,52 @@
             workCategory: 'all'
         };
 
+        // Check if user is logged in
+        let isLoggedIn = false;
+
         // Initialize the application
         function init() {
+            // Initially show only login modal
+            loginModal.style.display = 'flex';
+            mainContent.style.display = 'none';
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+
+        // Handle login
+        function handleLogin() {
+            if (passwordInput.value === 'gambia@2025') {
+                // Correct password
+                loginModal.style.display = 'none';
+                mainContent.style.display = 'block';
+                passwordInput.value = '';
+                passwordError.style.display = 'none';
+                isLoggedIn = true;
+                
+                // Initialize dashboard
+                initializeDashboard();
+                
+                // Show logout button
+                logoutBtn.style.display = 'inline-block';
+                adminBtn.style.display = 'none';
+            } else {
+                // Incorrect password
+                passwordError.style.display = 'block';
+            }
+        }
+
+        // Handle logout
+        function handleLogout() {
+            isLoggedIn = false;
+            loginModal.style.display = 'flex';
+            mainContent.style.display = 'none';
+            logoutBtn.style.display = 'none';
+            adminBtn.style.display = 'inline-block';
+        }
+
+        // Initialize dashboard after login
+        function initializeDashboard() {
             // Set last updated date
             lastUpdated.textContent = new Date().toLocaleDateString('en-GB', {
                 day: 'numeric',
@@ -1181,9 +1255,6 @@
             
             // Populate stakeholder filter
             populateStakeholderFilter();
-            
-            // Set up event listeners
-            setupEventListeners();
             
             // Load initial data
             applyFilters();
@@ -1326,17 +1397,42 @@
 
         // Set up event listeners
         function setupEventListeners() {
+            // Login button
+            loginBtn.addEventListener('click', handleLogin);
+            
+            // Enter key for password field
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+            
+            // Logout button
+            logoutBtn.addEventListener('click', handleLogout);
+            
             // Apply filters button
-            applyFiltersBtn.addEventListener('click', applyFilters);
+            applyFiltersBtn.addEventListener('click', function() {
+                if (!isLoggedIn) return;
+                applyFilters();
+            });
             
             // Reset filters button
-            resetFiltersBtn.addEventListener('click', resetFilters);
+            resetFiltersBtn.addEventListener('click', function() {
+                if (!isLoggedIn) return;
+                resetFilters();
+            });
             
             // Download all data button
-            downloadAllBtn.addEventListener('click', downloadAllData);
+            downloadAllBtn.addEventListener('click', function() {
+                if (!isLoggedIn) return;
+                downloadAllData();
+            });
             
             // View statistics button
-            viewStatsBtn.addEventListener('click', viewStatistics);
+            viewStatsBtn.addEventListener('click', function() {
+                if (!isLoggedIn) return;
+                viewStatistics();
+            });
             
             // Work category filter change
             workCategoryFilter.addEventListener('change', function() {
@@ -1345,6 +1441,7 @@
             
             // Action filter change
             actionFilter.addEventListener('change', function() {
+                if (!isLoggedIn) return;
                 if (this.value === 'download') {
                     downloadFilteredData();
                     // Reset to view option
@@ -1354,39 +1451,29 @@
                 }
             });
             
-            // Admin button
+            // Admin button (for edit mode)
             adminBtn.addEventListener('click', () => {
-                loginModal.style.display = 'flex';
-            });
-            
-            // Login button
-            loginBtn.addEventListener('click', () => {
-                if (passwordInput.value === 'gambia@2025') {
-                    // Correct password
-                    loginModal.style.display = 'none';
-                    passwordInput.value = '';
-                    passwordError.style.display = 'none';
-                    alert('Administrative access granted. You can now edit data.');
+                if (!isLoggedIn) return;
+                // Show admin login modal for editing
+                const adminPassword = prompt("Enter administrative password for edit access:");
+                if (adminPassword === 'gambia@2025') {
                     enableEditing();
                 } else {
-                    // Incorrect password
-                    passwordError.style.display = 'block';
+                    alert("Incorrect administrative password.");
                 }
             });
             
-            // Cancel login button
-            cancelLoginBtn.addEventListener('click', () => {
-                loginModal.style.display = 'none';
-                passwordInput.value = '';
-                passwordError.style.display = 'none';
-            });
-            
             // Download traditional data button
-            downloadTraditionalBtn.addEventListener('click', downloadTraditionalData);
+            downloadTraditionalBtn.addEventListener('click', function() {
+                if (!isLoggedIn) return;
+                downloadTraditionalData();
+            });
         }
 
         // Apply filters and update display
         function applyFilters() {
+            if (!isLoggedIn) return;
+            
             // Get filtered data
             const filteredData = getFilteredData();
             
@@ -1562,6 +1649,7 @@
             // Add event listeners for download buttons in traditional section
             document.querySelectorAll('.download-chief-btn').forEach(button => {
                 button.addEventListener('click', function() {
+                    if (!isLoggedIn) return;
                     const districtId = this.getAttribute('data-district-id');
                     downloadDistrictChiefData(districtId);
                 });
@@ -1577,6 +1665,7 @@
             
             document.querySelectorAll('.download-village-btn').forEach(button => {
                 button.addEventListener('click', function() {
+                    if (!isLoggedIn) return;
                     const districtId = this.getAttribute('data-district-id');
                     const villageSelect = document.querySelector(`.village-select[data-district-id="${districtId}"]`);
                     const villageId = villageSelect.value;
@@ -1590,6 +1679,8 @@
 
         // Reset all filters
         function resetFilters() {
+            if (!isLoggedIn) return;
+            
             stakeholderFilter.value = 'all';
             subDeptFilter.innerHTML = '<option value="all">All Sub-Departments</option>';
             workCategoryFilter.innerHTML = '<option value="all">All Work Categories</option>';
@@ -1611,6 +1702,8 @@
 
         // Download all data as CSV
         function downloadAllData() {
+            if (!isLoggedIn) return;
+            
             // Collect all data
             let allData = [];
             
@@ -1645,6 +1738,8 @@
 
         // Download filtered data as CSV
         function downloadFilteredData() {
+            if (!isLoggedIn) return;
+            
             const filteredData = getFilteredData();
             
             if (filteredData.length === 0) {
@@ -1687,6 +1782,8 @@
 
         // View statistics
         function viewStatistics() {
+            if (!isLoggedIn) return;
+            
             const filteredData = getFilteredData();
             
             if (filteredData.length === 0) {
@@ -1760,6 +1857,8 @@
 
         // Download traditional data
         function downloadTraditionalData() {
+            if (!isLoggedIn) return;
+            
             // Prepare data for CSV
             let traditionalCSVData = [];
             
@@ -1798,6 +1897,8 @@
 
         // Download district chief data
         function downloadDistrictChiefData(districtId) {
+            if (!isLoggedIn) return;
+            
             const district = regionData.traditionalData.districts.find(d => d.id === districtId);
             
             if (!district) return;
@@ -1819,6 +1920,8 @@
 
         // Download village data
         function downloadVillageData(villageId) {
+            if (!isLoggedIn) return;
+            
             // Find the village
             let targetVillage = null;
             let districtName = '';
