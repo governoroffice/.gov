@@ -369,7 +369,6 @@
         
         /* Login Modal */
         .modal {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -465,6 +464,11 @@
             background: rgba(255, 215, 0, 0.1);
         }
         
+        /* Main Content Container */
+        .main-content {
+            display: none;
+        }
+        
         /* Responsive */
         @media (max-width: 992px) {
             .header-content {
@@ -503,142 +507,144 @@
 </head>
 <body>
     <!-- Login Modal -->
-    <div id="loginModal" class="modal">
+    <div id="loginModal" class="modal" style="display: flex;">
         <div class="modal-content">
             <div class="modal-header">
                 <i class="fas fa-lock" style="font-size: 2.5rem; color: var(--gold); margin-bottom: 15px;"></i>
-                <h3>Administrative Access</h3>
-                <p>Enter password to edit dashboard data</p>
+                <h3>Governor's Dashboard Access</h3>
+                <p>Enter password to access the dashboard</p>
             </div>
             <div class="input-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter administrative password">
+                <input type="password" id="password" placeholder="Enter dashboard access password">
                 <div id="passwordError" style="color: #FF0000; margin-top: 10px; display: none;">Incorrect password. Please try again.</div>
             </div>
             <div class="modal-actions">
                 <button id="loginBtn" class="btn btn-primary">Login</button>
-                <button id="cancelLoginBtn" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-landmark"></i>
-                    <div class="logo-text">
-                        <h1>Governor's Regional Management Dashboard</h1>
-                        <h2>Lower River Region, The Gambia</h2>
+    <!-- Main Content Container -->
+    <div class="main-content" id="mainContent">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-landmark"></i>
+                        <div class="logo-text">
+                            <h1>Governor's Regional Management Dashboard</h1>
+                            <h2>Lower River Region, The Gambia</h2>
+                        </div>
+                    </div>
+                    <div class="governor-info">
+                        <h3>HON. SEEDY LAMIN BAH</h3>
+                        <p>Governor, Lower River Region</p>
+                    </div>
+                    <div class="admin-access">
+                        <button id="logoutBtn" class="admin-btn">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
                     </div>
                 </div>
-                <div class="governor-info">
-                    <h3>HON. SEEDY LAMIN BAH</h3>
-                    <p>Governor, Lower River Region</p>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Control Panel -->
+            <section class="control-panel">
+                <div class="panel-title">
+                    <i class="fas fa-filter"></i>
+                    <h2>Data Filtering & Analysis Panel</h2>
                 </div>
-                <div class="admin-access">
-                    <button id="adminBtn" class="admin-btn">
-                        <i class="fas fa-user-shield"></i> Admin
+                
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="stakeholderFilter"><i class="fas fa-users"></i> Key Stakeholders</label>
+                        <select id="stakeholderFilter">
+                            <option value="all">All Stakeholders</option>
+                            <option value="1">1. Regional Council & Local Government</option>
+                            <option value="2">2. Regional Security Committee (RECSEC)</option>
+                            <option value="3">3. Central Government Ministry Heads</option>
+                            <option value="4">4. Traditional Authority Structure</option>
+                            <option value="5">5. Elected National Representatives</option>
+                            <option value="6">6. Alikalos & Grassroots Structures</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="subDeptFilter"><i class="fas fa-sitemap"></i> Sub-Department</label>
+                        <select id="subDeptFilter">
+                            <option value="all">All Sub-Departments</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="workCategoryFilter"><i class="fas fa-tasks"></i> Work Categories</label>
+                        <select id="workCategoryFilter">
+                            <option value="all">All Work Categories</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="actionFilter"><i class="fas fa-chart-line"></i> Action</label>
+                        <select id="actionFilter">
+                            <option value="view">View Regional Statistics</option>
+                            <option value="download">Download CSV</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="applyFiltersBtn" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <button id="resetFiltersBtn" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i> Reset Filters
+                    </button>
+                    <button id="downloadAllBtn" class="btn btn-diamond">
+                        <i class="fas fa-download"></i> Download All Data (CSV)
+                    </button>
+                    <button id="viewStatsBtn" class="btn btn-diamond">
+                        <i class="fas fa-chart-bar"></i> View Regional Statistics
                     </button>
                 </div>
-            </div>
+            </section>
+
+            <!-- Main Data Display -->
+            <section class="data-display" id="mainDataDisplay">
+                <div class="data-header">
+                    <h3>Regional Data Overview</h3>
+                    <div class="data-count">
+                        <span id="dataCount">0</span> Records Found
+                    </div>
+                </div>
+                <div id="tableContainer">
+                    <!-- Table will be generated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Traditional Authority Display -->
+            <section class="traditional-section" id="traditionalSection">
+                <div class="traditional-header">
+                    <h3>Traditional Authority Structure - Districts & Villages</h3>
+                    <button id="downloadTraditionalBtn" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Download All Traditional Data
+                    </button>
+                </div>
+                <div id="districtsContainer" class="districts-container">
+                    <!-- District cards will be generated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer>
+                <p>Governor's Dashboard &copy; 2025 - Lower River Region, The Gambia</p>
+                <p>Data last updated: <span id="lastUpdated">June 15, 2025</span></p>
+                <p style="margin-top: 10px; font-size: 0.8rem; color: #666;">Password Protected Access</p>
+            </footer>
         </div>
-    </header>
-
-    <div class="container">
-        <!-- Control Panel -->
-        <section class="control-panel">
-            <div class="panel-title">
-                <i class="fas fa-filter"></i>
-                <h2>Data Filtering & Analysis Panel</h2>
-            </div>
-            
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="stakeholderFilter"><i class="fas fa-users"></i> Key Stakeholders</label>
-                    <select id="stakeholderFilter">
-                        <option value="all">All Stakeholders</option>
-                        <option value="1">1. Regional Council & Local Government</option>
-                        <option value="2">2. Regional Security Committee (RECSEC)</option>
-                        <option value="3">3. Central Government Ministry Heads</option>
-                        <option value="4">4. Traditional Authority Structure</option>
-                        <option value="5">5. Elected National Representatives</option>
-                        <option value="6">6. Alikalos & Grassroots Structures</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="subDeptFilter"><i class="fas fa-sitemap"></i> Sub-Department</label>
-                    <select id="subDeptFilter">
-                        <option value="all">All Sub-Departments</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="workCategoryFilter"><i class="fas fa-tasks"></i> Work Categories</label>
-                    <select id="workCategoryFilter">
-                        <option value="all">All Work Categories</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="actionFilter"><i class="fas fa-chart-line"></i> Action</label>
-                    <select id="actionFilter">
-                        <option value="view">View Regional Statistics</option>
-                        <option value="download">Download CSV</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="action-buttons">
-                <button id="applyFiltersBtn" class="btn btn-primary">
-                    <i class="fas fa-search"></i> Apply Filters
-                </button>
-                <button id="resetFiltersBtn" class="btn btn-secondary">
-                    <i class="fas fa-redo"></i> Reset Filters
-                </button>
-                <button id="downloadAllBtn" class="btn btn-diamond">
-                    <i class="fas fa-download"></i> Download All Data (CSV)
-                </button>
-                <button id="viewStatsBtn" class="btn btn-diamond">
-                    <i class="fas fa-chart-bar"></i> View Regional Statistics
-                </button>
-            </div>
-        </section>
-
-        <!-- Main Data Display -->
-        <section class="data-display" id="mainDataDisplay">
-            <div class="data-header">
-                <h3>Regional Data Overview</h3>
-                <div class="data-count">
-                    <span id="dataCount">0</span> Records Found
-                </div>
-            </div>
-            <div id="tableContainer">
-                <!-- Table will be generated by JavaScript -->
-            </div>
-        </section>
-
-        <!-- Traditional Authority Display -->
-        <section class="traditional-section" id="traditionalSection">
-            <div class="traditional-header">
-                <h3>Traditional Authority Structure - Districts & Villages</h3>
-                <button id="downloadTraditionalBtn" class="btn btn-primary">
-                    <i class="fas fa-download"></i> Download All Traditional Data
-                </button>
-            </div>
-            <div id="districtsContainer" class="districts-container">
-                <!-- District cards will be generated by JavaScript -->
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer>
-            <p>Governor's Dashboard &copy; 2025 - Lower River Region, The Gambia</p>
-            <p>Data last updated: <span id="lastUpdated">June 15, 2025</span></p>
-            <p style="margin-top: 10px; font-size: 0.8rem; color: #666;">Administrative Access Password Protected</p>
-        </footer>
     </div>
 
     <script>
@@ -1090,7 +1096,7 @@
                             contact: "3457049",
                             tenure: "Since 2016",
                             status: "Active",
-                            notes: "Strong on conflict resolution. Mediated 8 major disputes this year including 3 inter-village conflicts. Education: Teacher training college. Development focus: Education infrastructure. Health advocacy: Successfully lobbied for maternity ward. Tax collection: Improved compliance by 35%."
+                            notes: "Strong on conflict resolution. Mediated 8 major disputes this year including 3 inter-village conflicts. Education: Teacher training college. Development focus: Education infrastructure. Health advocacy: Successfully lobbied for maternity ward. Tax collection: Improved compliance by 35%." }
                         },
                         villages: [
                             { id: "V4-1", name: "Soma (Regional Capital)", head: "Alikalo Ousman Bah", contact: "3457050", population: "2,500", status: "Active", issues: "Traffic congestion in market area, need traffic management plan. Water: Adequate. Electricity: 90% coverage. Health: Regional hospital present. Education: All levels available. Market: Largest in region, needs expansion." },
@@ -1136,11 +1142,13 @@
             }
         };
 
-        // THE REMAINDER OF THE JAVASCRIPT CODE REMAINS EXACTLY THE SAME AS BEFORE
-        // DOM Elements, functions, event listeners - all unchanged
-        // Only the data structure above has been expanded
-        
         // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const mainContent = document.getElementById('mainContent');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const passwordError = document.getElementById('passwordError');
+        const logoutBtn = document.getElementById('logoutBtn');
         const stakeholderFilter = document.getElementById('stakeholderFilter');
         const subDeptFilter = document.getElementById('subDeptFilter');
         const workCategoryFilter = document.getElementById('workCategoryFilter');
@@ -1154,12 +1162,6 @@
         const tableContainer = document.getElementById('tableContainer');
         const districtsContainer = document.getElementById('districtsContainer');
         const dataCount = document.getElementById('dataCount');
-        const adminBtn = document.getElementById('adminBtn');
-        const loginModal = document.getElementById('loginModal');
-        const loginBtn = document.getElementById('loginBtn');
-        const cancelLoginBtn = document.getElementById('cancelLoginBtn');
-        const passwordInput = document.getElementById('password');
-        const passwordError = document.getElementById('passwordError');
         const downloadTraditionalBtn = document.getElementById('downloadTraditionalBtn');
         const lastUpdated = document.getElementById('lastUpdated');
 
@@ -1172,6 +1174,10 @@
 
         // Initialize the application
         function init() {
+            // Show login modal, hide main content initially
+            loginModal.style.display = 'flex';
+            mainContent.style.display = 'none';
+            
             // Set last updated date
             lastUpdated.textContent = new Date().toLocaleDateString('en-GB', {
                 day: 'numeric',
@@ -1179,17 +1185,60 @@
                 year: 'numeric'
             });
             
-            // Populate stakeholder filter
-            populateStakeholderFilter();
-            
             // Set up event listeners
             setupEventListeners();
+            
+            // Note: We don't load data or generate display until user logs in
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Login button
+            loginBtn.addEventListener('click', () => {
+                if (passwordInput.value === 'governorlrr@2025') {
+                    // Correct password
+                    loginModal.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    passwordInput.value = '';
+                    passwordError.style.display = 'none';
+                    
+                    // Now initialize the dashboard functionality
+                    initializeDashboard();
+                } else {
+                    // Incorrect password
+                    passwordError.style.display = 'block';
+                }
+            });
+            
+            // Allow Enter key to submit password
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    loginBtn.click();
+                }
+            });
+            
+            // Logout button
+            logoutBtn.addEventListener('click', () => {
+                mainContent.style.display = 'none';
+                loginModal.style.display = 'flex';
+                passwordInput.value = '';
+                passwordError.style.display = 'none';
+            });
+        }
+
+        // Initialize dashboard functionality after login
+        function initializeDashboard() {
+            // Populate stakeholder filter
+            populateStakeholderFilter();
             
             // Load initial data
             applyFilters();
             
             // Generate traditional authority display
             generateTraditionalDisplay();
+            
+            // Set up dashboard event listeners
+            setupDashboardEventListeners();
         }
 
         // Populate stakeholder filter
@@ -1324,8 +1373,8 @@
             currentFilters.workCategory = 'all';
         }
 
-        // Set up event listeners
-        function setupEventListeners() {
+        // Set up dashboard event listeners
+        function setupDashboardEventListeners() {
             // Apply filters button
             applyFiltersBtn.addEventListener('click', applyFilters);
             
@@ -1352,33 +1401,6 @@
                         actionFilter.value = 'view';
                     }, 100);
                 }
-            });
-            
-            // Admin button
-            adminBtn.addEventListener('click', () => {
-                loginModal.style.display = 'flex';
-            });
-            
-            // Login button
-            loginBtn.addEventListener('click', () => {
-                if (passwordInput.value === 'gambia@2025') {
-                    // Correct password
-                    loginModal.style.display = 'none';
-                    passwordInput.value = '';
-                    passwordError.style.display = 'none';
-                    alert('Administrative access granted. You can now edit data.');
-                    enableEditing();
-                } else {
-                    // Incorrect password
-                    passwordError.style.display = 'block';
-                }
-            });
-            
-            // Cancel login button
-            cancelLoginBtn.addEventListener('click', () => {
-                loginModal.style.display = 'none';
-                passwordInput.value = '';
-                passwordError.style.display = 'none';
             });
             
             // Download traditional data button
@@ -1884,108 +1906,6 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        }
-
-        // Enable editing mode (after admin login)
-        function enableEditing() {
-            // Add edit buttons to table rows
-            const tableRows = document.querySelectorAll('#tableContainer tbody tr');
-            tableRows.forEach(row => {
-                const editCell = document.createElement('td');
-                editCell.innerHTML = '<button class="btn" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-edit"></i> Edit</button>';
-                row.appendChild(editCell);
-                
-                // Add edit functionality
-                const editBtn = editCell.querySelector('button');
-                editBtn.addEventListener('click', function() {
-                    enableRowEditing(row);
-                });
-            });
-            
-            // Add edit buttons to traditional section
-            document.querySelectorAll('.district-card').forEach(card => {
-                const editBtn = document.createElement('button');
-                editBtn.className = 'btn btn-secondary';
-                editBtn.style.marginTop = '10px';
-                editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit District Data';
-                editBtn.addEventListener('click', function() {
-                    alert('District editing functionality would be implemented here.');
-                });
-                
-                card.appendChild(editBtn);
-            });
-            
-            // Change admin button to show edit mode
-            adminBtn.innerHTML = '<i class="fas fa-user-edit"></i> Edit Mode';
-            adminBtn.style.background = 'var(--gold)';
-            adminBtn.style.color = 'var(--dark-blue)';
-        }
-
-        // Enable editing for a specific table row
-        function enableRowEditing(row) {
-            const cells = row.querySelectorAll('td');
-            
-            // Skip the last cell (edit button cell)
-            for (let i = 0; i < cells.length - 1; i++) {
-                const cell = cells[i];
-                const originalContent = cell.textContent;
-                
-                // Create input field
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.value = originalContent.trim();
-                input.style.width = '100%';
-                input.style.padding = '5px';
-                input.style.border = '1px solid var(--gold)';
-                
-                // Replace cell content with input
-                cell.innerHTML = '';
-                cell.appendChild(input);
-            }
-            
-            // Change edit button to save button
-            const actionCell = cells[cells.length - 1];
-            const button = actionCell.querySelector('button');
-            button.innerHTML = '<i class="fas fa-save"></i> Save';
-            button.style.background = 'var(--green)';
-            button.style.color = 'white';
-            
-            // Change button action to save
-            button.onclick = function() {
-                saveRowEdits(row);
-            };
-        }
-
-        // Save edits for a table row
-        function saveRowEdits(row) {
-            const cells = row.querySelectorAll('td');
-            const updatedData = [];
-            
-            // Collect updated values
-            for (let i = 0; i < cells.length - 1; i++) {
-                const cell = cells[i];
-                const input = cell.querySelector('input');
-                updatedData.push(input.value);
-                
-                // Restore cell content
-                cell.textContent = input.value;
-            }
-            
-            // Change save button back to edit button
-            const actionCell = cells[cells.length - 1];
-            const button = actionCell.querySelector('button');
-            button.innerHTML = '<i class="fas fa-edit"></i> Edit';
-            button.style.background = '';
-            button.style.color = '';
-            
-            // Restore edit functionality
-            button.onclick = function() {
-                enableRowEditing(row);
-            };
-            
-            // In a real application, you would save the updated data to your data structure
-            console.log('Updated row data:', updatedData);
-            alert('Changes saved locally. In a real application, this would update the database.');
         }
 
         // Initialize the application when DOM is loaded
