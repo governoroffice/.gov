@@ -498,29 +498,76 @@
             .btn {
                 width: 100%;
             }
-        }
+             }
+
+        /* ===== UTILITY CLASSES ===== */
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s ease; }
     </style>
 </head>
 <body>
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <i class="fas fa-lock" style="font-size: 2.5rem; color: var(--gold); margin-bottom: 15px;"></i>
-                <h3>Administrative Access</h3>
-                <p>Enter password to edit dashboard data</p>
-            </div>
-            <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter administrative password">
-                <div id="passwordError" style="color: #FF0000; margin-top: 10px; display: none;">Incorrect password. Please try again.</div>
-            </div>
-            <div class="modal-actions">
-                <button id="loginBtn" class="btn btn-primary">Login</button>
-                <button id="cancelLoginBtn" class="btn btn-secondary">Cancel</button>
+    <!-- SECURITY SCREEN - REQUIRES PASSWORD -->
+    <div id="securityScreen">
+        <div class="security-logo">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <h1 class="security-title">GOVERNOR'S OFFICE DIRECTORY</h1>
+        <p class="security-subtitle">
+            Official Staff Directory - Lower River Region<br>
+            <span style="color: var(--gold-primary); font-weight: 600;">CLASSIFIED INFORMATION - AUTHORIZED ACCESS ONLY</span>
+        </p>
+        
+        <div class="security-login-box">
+            <h2><i class="fas fa-lock"></i> SECURE ACCESS</h2>
+            
+            <form id="loginForm">
+                <div class="login-form-group">
+                    <label for="password"><i class="fas fa-key"></i> ENTER SECURITY PASSWORD</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="password" placeholder="Enter security password" required>
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-unlock-alt"></i> ACCESS SYSTEM
+                </button>
+                
+                <div class="login-error" id="loginError">
+                    <i class="fas fa-exclamation-triangle"></i> Invalid password. Access denied.
+                </div>
+            </form>
+            
+            <div class="security-warning">
+                <i class="fas fa-exclamation-circle"></i>
+                Restricted Access: This system contains classified government information.<br>
+                Unauthorized access is prohibited.
             </div>
         </div>
     </div>
+
+    <!-- MAIN CONTENT - ONLY VISIBLE AFTER LOGIN -->
+    <div id="mainContent">
+        <!-- HEADER -->
+        <header class="main-header">
+            <div class="header-container">
+                <div class="header-left">
+                    <div class="governor-logo">
+                        GOV LRR
+                    </div>
+                    <div class="header-titles">
+                        <h1>Office of the Governor</h1>
+                        <h2>Lower River Region • Republic of The Gambia</h2>
+                    </div>
+                </div>
+                
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> LOGOUT
+                </button>
+            </div>
+        </header>
 
     <!-- Header -->
     <header>
